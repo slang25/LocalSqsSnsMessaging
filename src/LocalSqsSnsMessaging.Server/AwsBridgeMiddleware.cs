@@ -141,6 +141,8 @@ internal sealed class AwsBridgeMiddleware
             return;
         }
 
+        SqsWireProtocol.AddQueueUrlFromPath(parameters, context.Request.Scheme, context.Request.Host.Value ?? string.Empty, context.Request.Path.Value);
+
         using var buffer = PooledArrayBufferWriter.Rent();
         var client = new InternalSqsClient(bus) { Caller = SqsCaller.FromHttpContext(context) };
         var status = await SqsQueryOperationHandler.HandleAsync(parameters, client, buffer.Writer, cancellationToken).ConfigureAwait(false);

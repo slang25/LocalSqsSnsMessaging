@@ -330,6 +330,39 @@ public sealed class ServerSmokeTests : IAsyncDisposable
     }
 
     [Test]
+    public async Task Sqs_QueryRequestPostedToTheQueuePath_SendsToThatQueue()
+    {
+        // The AWS SDK for Java v1 moves QueueUrl out of the form and into the request path.
+        var queueUrl = (await _sqsClient!.CreateQueueAsync("query-path-queue")).QueueUrl;
+        using var http = new HttpClient();
+        using var content = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["Action"] = "SendMessage",
+            ["Version"] = "2012-11-05",
+            ["MessageBody"] = "addressed by path",
+        });
+
+        using var send = await http.PostAsync(new Uri($"http://localhost:{_port}{new Uri(queueUrl).AbsolutePath}"), content);
+
+        send.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await _sqsClient.ReceiveMessageAsync(queueUrl)).Messages.ShouldHaveSingleItem().Body.ShouldBe("addressed by path");
+    }
+
+    [Test]
+    public async Task Sqs_EnforceTlsPolicy_DoesNotLockOutThePlainHttpServer()
+    {
+        var queueUrl = (await _sqsClient!.CreateQueueAsync("enforce-tls-queue")).QueueUrl;
+        var arn = (await _sqsClient.GetQueueAttributesAsync(queueUrl, ["QueueArn"])).Attributes["QueueArn"];
+        await _sqsClient.SetQueueAttributesAsync(queueUrl, new Dictionary<string, string>
+        {
+            ["Policy"] = $$$$"""{"Version":"2012-10-17","Statement":[{"Effect":"Deny","Principal":{"AWS":"*"},"Action":"sqs:*","Resource":"{{{{arn}}}}","Condition":{"Bool":{"aws:SecureTransport":"false"}}}]}""",
+        });
+
+        await _sqsClient.SendMessageAsync(queueUrl, "over http");
+        (await _sqsClient.ReceiveMessageAsync(queueUrl)).Messages.ShouldHaveSingleItem().Body.ShouldBe("over http");
+    }
+
+    [Test]
     public async Task Sqs_QueryProtocolRequests_ShareQueuesWithJsonClients()
     {
         // Form-encoded SQS requests are told apart from SNS's, which share the endpoint, by their

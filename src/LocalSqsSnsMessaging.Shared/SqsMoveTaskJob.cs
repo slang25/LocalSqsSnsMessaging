@@ -24,7 +24,7 @@ internal sealed class SqsMoveTaskJob : IDisposable
 
         // Check the rate limit before taking a message, so none is dequeued and then left behind.
         while ((rateLimitPerSecond is null || messagesMovedThisIteration < rateLimitPerSecond)
-               && sourceQueue.Messages.TryDequeue(out var message))
+               && sourceQueue.TryDequeueForMove(out var message))
         {
             var targetQueue = destinationQueue;
             if (targetQueue is null
@@ -34,7 +34,7 @@ internal sealed class SqsMoveTaskJob : IDisposable
                 // A message that was not dead-lettered from a queue (sent to the DLQ directly, or
                 // its source deleted) has nowhere to go back to: SQS fails the task and leaves the
                 // message where it is.
-                sourceQueue.Messages.Enqueue(message);
+                sourceQueue.ReturnUnmovedMessage(message);
                 failureReason = "CouldNotDetermineMessageSource";
                 break;
             }
@@ -61,7 +61,7 @@ internal sealed class SqsMoveTaskJob : IDisposable
             moveTask.MoveTaskJob.Dispose();
         }
         else if (moveTask.ApproximateNumberOfMessagesMoved >= moveTask.ApproximateNumberOfMessagesToMove
-                 || (sourceQueue.Messages.Count == 0 && sourceQueue.InFlightMessages.IsEmpty))
+                 || (sourceQueue.VisibleMessageCount == 0 && sourceQueue.InFlightMessages.IsEmpty))
         {
             // ApproximateNumberOfMessagesToMove stays at the count the task started with, as in SQS.
             moveTask.Status = MoveTaskStatus.Completed;

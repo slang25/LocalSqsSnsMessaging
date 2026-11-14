@@ -413,15 +413,48 @@ internal static class SqsQueueValidation
         }
     }
 
+    /// <summary>
+    /// Parses a JSON object, or <see langword="null"/> when <paramref name="value"/> is not one.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="JsonNode.Parse(string, JsonNodeOptions?, JsonDocumentOptions)"/> reads objects
+    /// lazily: a duplicate property name only throws (an <see cref="ArgumentException"/>, not a
+    /// <see cref="JsonException"/>) when the object is first read. Every object is read here, so a
+    /// document with a duplicate property is refused up front instead of failing every later use,
+    /// and the result can be shared between threads (lazy reads are not thread-safe).
+    /// </remarks>
     public static JsonObject? TryParseObject(string value)
     {
         try
         {
-            return JsonNode.Parse(value) as JsonObject;
+            var document = JsonNode.Parse(value) as JsonObject;
+            ReadFully(document);
+            return document;
         }
-        catch (JsonException)
+        catch (Exception e) when (e is JsonException or ArgumentException)
         {
             return null;
+        }
+    }
+
+    private static void ReadFully(JsonNode? node)
+    {
+        switch (node)
+        {
+            case JsonObject properties:
+                foreach (var property in properties)
+                {
+                    ReadFully(property.Value);
+                }
+
+                break;
+            case JsonArray items:
+                foreach (var item in items)
+                {
+                    ReadFully(item);
+                }
+
+                break;
         }
     }
 }

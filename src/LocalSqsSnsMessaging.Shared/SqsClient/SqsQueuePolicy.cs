@@ -48,17 +48,7 @@ internal static class SqsQueuePolicy
     /// </summary>
     public static string Normalize(string policy)
     {
-        JsonNode? root;
-        try
-        {
-            root = JsonNode.Parse(policy);
-        }
-        catch (JsonException)
-        {
-            return policy;
-        }
-
-        if (root is not JsonObject document)
+        if (SqsQueueValidation.TryParseObject(policy) is not { } document)
         {
             return policy;
         }
@@ -118,17 +108,7 @@ internal static class SqsQueuePolicy
             && Applies(statement, request) == true);
 
     private static JsonObject? Parse(string policy) =>
-        ParsedDocuments.GetValue(policy, static json =>
-        {
-            try
-            {
-                return JsonNode.Parse(json) as JsonObject;
-            }
-            catch (JsonException)
-            {
-                return null;
-            }
-        });
+        ParsedDocuments.GetValue(policy, SqsQueueValidation.TryParseObject);
 
     private static IEnumerable<JsonObject> Statements(JsonObject document) =>
         document["Statement"] switch

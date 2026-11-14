@@ -170,6 +170,11 @@ public sealed class InMemoryAwsHttpMessageHandler : DelegatingHandler
             body ??= content is not null ? await content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false) : [];
             // A GET carries its Query parameters in the URL rather than the body.
             var parameters = QueryStringParser.Parse(body.Length > 0 ? body : Encoding.UTF8.GetBytes(query.TrimStart('?')));
+            if (request.RequestUri?.IsAbsoluteUri == true)
+            {
+                SqsWireProtocol.AddQueueUrlFromPath(parameters, request.RequestUri.Scheme, request.RequestUri.Authority, request.RequestUri.AbsolutePath);
+            }
+
             var client = new InternalSqsClient(_bus, AwsRequestRegion.FromRequest(request)) { Caller = SqsCaller.FromRequest(request) };
             return await SendSqsQueryAsync(parameters, client, cancellationToken).ConfigureAwait(false);
         }

@@ -160,6 +160,10 @@ internal sealed partial class InternalSqsClient
         return true;
     }
 
+    /// <summary>The MessageId a receipt handle minted by this library names, or <see langword="null"/>.</summary>
+    private static string? MessageIdOf(string receiptHandle) =>
+        TryParseReceiptHandle(receiptHandle, out _, out var messageId, out _, out _) ? messageId : null;
+
     private static AwsServiceException InvalidReceiptHandle(ReceiptHandleState state, string? receiptHandle) => state switch
     {
         // The queue the handle was issued by no longer exists, whatever now has its name.
@@ -187,17 +191,17 @@ internal sealed partial class InternalSqsClient
 
         switch (state)
         {
-            case ReceiptHandleState.Current:
-                if (queue.InFlightMessages.TryRemove(receiptHandle!, out var inFlightInfo))
-                {
-                    var (message, expirationHandler) = inFlightInfo;
-                    queue.LatestReceiptHandles.TryRemove(message.MessageId!, out _);
-                    FinalizeDeletedMessage(queue, message, expirationHandler);
-                }
-
+            case ReceiptHandleState.Current when queue.InFlightMessages.TryRemove(receiptHandle!, out var inFlightInfo):
+                var (message, expirationHandler) = inFlightInfo;
+                queue.LatestReceiptHandles.TryRemove(message.MessageId!, out _);
+                FinalizeDeletedMessage(queue, message, expirationHandler);
                 return null;
+            // The visibility timeout ended between resolving the handle and removing the message, so
+            // the handle has just lapsed: it still deletes the message, now visible again.
+            case ReceiptHandleState.Current:
             case ReceiptHandleState.Lapsed:
-                if (queue.TryTakeVisibleMessage(messageId!, out var visibleMessage))
+                messageId ??= MessageIdOf(receiptHandle!);
+                if (messageId is not null && queue.TryTakeVisibleMessage(messageId, out var visibleMessage))
                 {
                     queue.LatestReceiptHandles.TryRemove(messageId!, out _);
                 }
@@ -245,30 +249,31 @@ internal sealed partial class InternalSqsClient
 
         switch (state)
         {
-            case ReceiptHandleState.Current:
-                if (queue.InFlightMessages.TryGetValue(receiptHandle!, out var inFlightInfo))
+            case ReceiptHandleState.Current when queue.InFlightMessages.TryGetValue(receiptHandle!, out var inFlightInfo):
+                var (message, expirationHandler) = inFlightInfo;
+                if (visibilityTimeout == TimeSpan.Zero)
                 {
-                    var (message, expirationHandler) = inFlightInfo;
-                    if (visibilityTimeout == TimeSpan.Zero)
+                    if (queue.InFlightMessages.TryRemove(receiptHandle!, out var removedInfo))
                     {
-                        if (queue.InFlightMessages.TryRemove(receiptHandle!, out var removedInfo))
-                        {
-                            removedInfo.Item2.Dispose();
-                            // Same path as visibility-timeout expiry: for FIFO queues the message is
-                            // re-inserted at its original position in the group (not appended) and
-                            // the group's in-flight slot is released.
-                            queue.ReturnInFlightMessage(message);
-                        }
+                        removedInfo.Item2.Dispose();
+                        // Same path as visibility-timeout expiry: for FIFO queues the message is
+                        // re-inserted at its original position in the group (not appended) and
+                        // the group's in-flight slot is released.
+                        queue.ReturnInFlightMessage(message);
                     }
-                    else
-                    {
-                        expirationHandler.UpdateTimeout(visibilityTimeout);
-                    }
+                }
+                else
+                {
+                    expirationHandler.UpdateTimeout(visibilityTimeout);
                 }
 
                 return null;
+            // The visibility timeout ended between resolving the handle and reading the message, so
+            // the handle has just lapsed: it still hides the message, now visible again.
+            case ReceiptHandleState.Current:
             case ReceiptHandleState.Lapsed:
-                if (visibilityTimeout > TimeSpan.Zero && queue.TryTakeVisibleMessage(messageId!, out var visibleMessage))
+                messageId ??= MessageIdOf(receiptHandle!);
+                if (visibilityTimeout > TimeSpan.Zero && messageId is not null && queue.TryTakeVisibleMessage(messageId, out var visibleMessage))
                 {
                     // The handle is still the message's latest, so it hides the message again.
                     var expirationJob = new SqsInflightMessageExpirationJob(receiptHandle!, queue, Timeout.InfiniteTimeSpan, _bus.TimeProvider);
@@ -2015,7 +2020,7 @@ internal sealed partial class InternalSqsClient
         }
 
         // In-flight messages count too: the task moves them once they become visible again.
-        var approximateNumberOfMessages = sourceQueue.Messages.Count + sourceQueue.InFlightMessages.Count;
+        var approximateNumberOfMessages = sourceQueue.VisibleMessageCount + sourceQueue.InFlightMessages.Count;
 
         var taskHandle = Guid.NewGuid().ToString();
         var moveTask = new SqsMoveTask

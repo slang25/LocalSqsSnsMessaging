@@ -64,6 +64,24 @@ public sealed class SqsQueryProtocolTests : IDisposable
     }
 
     [Test]
+    public async Task SendMessage_PostedToTheQueuePathWithoutAQueueUrl_SendsToThatQueue()
+    {
+        // The AWS SDK for Java v1 moves QueueUrl out of the form and into the request path.
+        var url = (await _sqs.CreateQueueAsync("query-by-path")).QueueUrl;
+        using var content = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["Action"] = "SendMessage",
+            ["Version"] = "2012-11-05",
+            ["MessageBody"] = "addressed by path",
+        });
+
+        using var response = await _http.PostAsync(new Uri(new Uri(url).AbsolutePath, UriKind.Relative), content);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await _sqs.ReceiveMessageAsync(url)).Messages.ShouldHaveSingleItem().Body.ShouldBe("addressed by path");
+    }
+
+    [Test]
     public async Task CreateQueue_AttributesAndTagsSentOverQuery_ReadBackOverBothProtocols()
     {
         var (status, root) = await QueryAsync(

@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -517,6 +518,49 @@ internal sealed class SqsQueueResource
 
         SignalFifoMessageAvailable();
     }
+
+    /// <summary>
+    /// Takes the next waiting message for a move task: the head of <see cref="Messages"/>, or, on a
+    /// FIFO queue, the head of a message group with nothing in flight, so each group's messages
+    /// leave in order.
+    /// </summary>
+    public bool TryDequeueForMove([NotNullWhen(true)] out Message? message)
+    {
+        if (!IsFifo)
+        {
+            var dequeued = Messages.TryDequeue(out var head);
+            message = dequeued ? head : null;
+            return dequeued;
+        }
+
+        foreach (var groupId in MessageGroups.Keys)
+        {
+            lock (MessageGroupLocks.GetOrAdd(groupId, _ => new object()))
+            {
+                if (!InFlightGroupCounts.ContainsKey(groupId)
+                    && MessageGroups.TryGetValue(groupId, out var groupQueue)
+                    && groupQueue.TryDequeue(out var head))
+                {
+                    if (groupQueue.IsEmpty)
+                    {
+                        MessageGroups.TryRemove(groupId, out _);
+                    }
+
+                    message = head;
+                    return true;
+                }
+            }
+        }
+
+        message = null;
+        return false;
+    }
+
+    /// <summary>
+    /// Puts back a message <see cref="TryDequeueForMove"/> took but could not move: at the head of its
+    /// FIFO message group, or at the back of a standard queue.
+    /// </summary>
+    public void ReturnUnmovedMessage(Message message) => ReturnInFlightMessage(message);
 
     /// <summary>
     /// Releases the in-flight slot a deleted FIFO message held, unlocking its message

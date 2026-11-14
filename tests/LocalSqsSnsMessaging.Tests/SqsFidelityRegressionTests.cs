@@ -231,4 +231,64 @@ public sealed class SqsFidelityRegressionTests
 
         exception.ErrorCode.ShouldBe("InvalidAttributeValue");
     }
+
+    [Test]
+    [Arguments("""{"Statement":[],"Statement":[]}""")]
+    [Arguments("""{"Statement":[{"Effect":"Deny","Effect":"Allow"}]}""")]
+    public async Task Policy_WithADuplicateProperty_IsRefusedAndTheQueueStaysUsable(string policy)
+    {
+        var (_, _, sqs) = Create();
+        using var _ = sqs;
+        var url = (await sqs.CreateQueueAsync("duplicate-policy-key")).QueueUrl;
+
+        var exception = await Should.ThrowAsync<AmazonSQSException>(() =>
+            sqs.SetQueueAttributesAsync(url, new() { ["Policy"] = policy }));
+
+        exception.ErrorCode.ShouldBe("InvalidAttributeValue");
+        await sqs.SendMessageAsync(url, "still usable");
+        ((await sqs.GetQueueAttributesAsync(url, ["Policy"])).Attributes ?? []).ShouldNotContainKey("Policy");
+    }
+
+    [Test]
+    public async Task MoveTask_OnAFifoDeadLetterQueue_RedrivesItsMessagesInOrder()
+    {
+        var (_, time, sqs) = Create();
+        using var _ = sqs;
+        var dlqUrl = (await sqs.CreateQueueAsync(new CreateQueueRequest
+        {
+            QueueName = "redrive-dlq.fifo",
+            Attributes = new() { ["FifoQueue"] = "true" },
+        })).QueueUrl;
+        var dlqArn = (await sqs.GetQueueAttributesAsync(dlqUrl, ["QueueArn"])).Attributes["QueueArn"];
+        var sourceUrl = (await sqs.CreateQueueAsync(new CreateQueueRequest
+        {
+            QueueName = "redrive-source.fifo",
+            Attributes = new()
+            {
+                ["FifoQueue"] = "true",
+                ["VisibilityTimeout"] = "5",
+                ["RedrivePolicy"] = $$"""{"deadLetterTargetArn":"{{dlqArn}}","maxReceiveCount":1}""",
+            },
+        })).QueueUrl;
+        foreach (var body in new[] { "first", "second" })
+        {
+            await sqs.SendMessageAsync(new SendMessageRequest { QueueUrl = sourceUrl, MessageBody = body, MessageGroupId = "g", MessageDeduplicationId = body });
+        }
+
+        // Received once each, then dead-lettered on the next receive once their visibility lapses.
+        (await sqs.ReceiveMessageAsync(new ReceiveMessageRequest { QueueUrl = sourceUrl, MaxNumberOfMessages = 10 })).Messages.Count.ShouldBe(2);
+        time.Advance(TimeSpan.FromSeconds(6));
+        (await sqs.ReceiveMessageAsync(new ReceiveMessageRequest { QueueUrl = sourceUrl, MaxNumberOfMessages = 10 })).Messages.ShouldBeNull();
+        (await sqs.GetQueueAttributesAsync(dlqUrl, ["ApproximateNumberOfMessages"])).ApproximateNumberOfMessages.ShouldBe(2);
+
+        await sqs.StartMessageMoveTaskAsync(new StartMessageMoveTaskRequest { SourceArn = dlqArn });
+        time.Advance(TimeSpan.FromSeconds(1));
+
+        var task = (await sqs.ListMessageMoveTasksAsync(new ListMessageMoveTasksRequest { SourceArn = dlqArn })).Results.ShouldHaveSingleItem();
+        task.Status.ShouldBe("COMPLETED");
+        task.ApproximateNumberOfMessagesMoved.ShouldBe(2);
+        (await sqs.GetQueueAttributesAsync(dlqUrl, ["ApproximateNumberOfMessages"])).ApproximateNumberOfMessages.ShouldBe(0);
+        var redriven = await sqs.ReceiveMessageAsync(new ReceiveMessageRequest { QueueUrl = sourceUrl, MaxNumberOfMessages = 10 });
+        redriven.Messages.Select(m => m.Body).ShouldBe(["first", "second"]);
+    }
 }

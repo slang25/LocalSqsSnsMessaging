@@ -114,6 +114,38 @@ public sealed class SqsCallerPolicyAndKmsTests
     }
 
     [Test]
+    public async Task Deny_WhenNotSecureTransport_DoesNotApplyToAPlainHttpEndpoint()
+    {
+        // The emulator is reached over plain HTTP, where every real SQS endpoint is TLS, so the
+        // common enforce-TLS statement must not lock callers out of the queue.
+        var bus = new InMemoryAwsBus();
+        using var factory = new InMemoryAwsHttpClientFactory(bus);
+        using var sqs = new AmazonSQSClient(
+            new BasicAWSCredentials("AKIAEXAMPLEKEY", "secret"),
+            new AmazonSQSConfig
+            {
+                ServiceURL = "http://localhost:4566",
+                AuthenticationRegion = bus.CurrentRegion,
+                MaxErrorRetry = 0,
+                HttpClientFactory = factory,
+            });
+        var url = (await sqs.CreateQueueAsync("deny-insecure")).QueueUrl;
+        var arn = await QueueArn(sqs, url);
+        await sqs.SetQueueAttributesAsync(url, new() { ["Policy"] = Policy(new JsonObject
+        {
+            ["Effect"] = "Deny",
+            ["Principal"] = new JsonObject { ["AWS"] = "*" },
+            ["Action"] = "sqs:*",
+            ["Resource"] = arn,
+            ["Condition"] = new JsonObject { ["Bool"] = new JsonObject { ["aws:SecureTransport"] = "false" } },
+        }) });
+
+        await sqs.SendMessageAsync(url, "over http");
+        (await sqs.ReceiveMessageAsync(url)).Messages.ShouldHaveSingleItem().Body.ShouldBe("over http");
+        await sqs.DeleteQueueAsync(url);
+    }
+
+    [Test]
     public async Task Deny_ForAnotherAccount_OrUnderAnUnevaluatedCondition_IsNotEnforced()
     {
         var bus = new InMemoryAwsBus();

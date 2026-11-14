@@ -126,6 +126,26 @@ internal static class SqsWireProtocol
             && authorizationHeader.Contains("/sqs/aws4_request", StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Fills in a Query request's <c>QueueUrl</c> from its path when it names none. Like SQS, the
+    /// Query protocol accepts a queue-scoped request posted to the queue's URL
+    /// (<c>/&lt;account&gt;/&lt;queue&gt;</c>) in place of the parameter, which is how the AWS SDK for
+    /// Java v1 sends them.
+    /// </summary>
+    public static void AddQueueUrlFromPath(Dictionary<string, string> parameters, string scheme, string authority, string? path)
+    {
+        if (parameters.ContainsKey("QueueUrl") || string.IsNullOrEmpty(path))
+        {
+            return;
+        }
+
+        var segments = path!.Trim('/').Split('/');
+        if (segments is [{ Length: > 0 } account, { Length: > 0 } queueName])
+        {
+            parameters["QueueUrl"] = $"{scheme}://{authority}/{account}/{queueName}";
+        }
+    }
+
     public static byte[] Utf8(string text) => Encoding.UTF8.GetBytes(text);
 
     /// <summary>The status code of each refusal.</summary>

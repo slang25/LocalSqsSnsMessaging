@@ -40,6 +40,12 @@ internal sealed class SqsCaller
     public IPAddress? SourceIp { get; }
 
     /// <summary>Whether the request came over TLS (<c>aws:SecureTransport</c>).</summary>
+    /// <remarks>
+    /// Always <see langword="true"/>: every SQS endpoint is reached over TLS, but the emulator is
+    /// reached over plain HTTP (the server listens on <c>http://</c> only). Reporting the real scheme
+    /// would make the common enforce-TLS statement (<c>Deny</c> when <c>aws:SecureTransport</c> is
+    /// <c>false</c>) deny every request, including the ones that could remove the policy.
+    /// </remarks>
     public bool SecureTransport { get; }
 
     /// <summary>The account the caller acts for.</summary>
@@ -72,7 +78,7 @@ internal sealed class SqsCaller
         return new SqsCaller(
             ExtractAccessKeyId(authorization, request.RequestUri?.Query),
             InProcessAddress,
-            !string.Equals(request.RequestUri?.Scheme, "http", StringComparison.OrdinalIgnoreCase));
+            secureTransport: true);
     }
 #else
     /// <summary>The caller behind a request the server received.</summary>
@@ -88,7 +94,7 @@ internal sealed class SqsCaller
         return new SqsCaller(
             ExtractAccessKeyId(context.Request.Headers.Authorization.ToString(), context.Request.QueryString.Value),
             remote ?? InProcessAddress,
-            context.Request.IsHttps);
+            secureTransport: true);
     }
 #endif
 
