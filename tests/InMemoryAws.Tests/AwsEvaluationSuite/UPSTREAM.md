@@ -37,11 +37,11 @@ the port). The *Last changed* column is the last upstream commit to change the c
 | [`sns`](#behavioralsns) | 245 | 207 | 1 | 38 | 0 |
 | [`sns__sqs`](#behavioralsns__sqs) | 12 | 12 | 0 | 0 | 0 |
 | [`sqs`](#behavioralsqs) | 306 | 271 | 3 | 35 | 0 |
-| [`s3`](#behaviorals3) | 481 | 400 | 2 | 12 | 69 |
+| [`s3`](#behaviorals3) | 481 | 465 | 1 | 16 | 0 |
 | [`s3__sqs`](#behaviorals3__sqs) | 16 | 13 | 0 | 3 | 0 |
 | [`s3__sns__sqs`](#behaviorals3__sns__sqs) | 2 | 2 | 0 | 0 | 0 |
 | [`events__s3__sqs`](#behavioralevents__s3__sqs) | 38 | 37 | 2 | 1 | 0 |
-| **Total** | **2302** | **2027** | **24** | **206** | **69** |
+| **Total** | **2302** | **2092** | **23** | **210** | **0** |
 
 ### Not ported, by reason
 
@@ -49,12 +49,12 @@ the port). The *Last changed* column is the last upstream commit to change the c
 |---|---:|
 | EventBridge v2 | 40 |
 | CloudFormation stacks | 38 |
-| KMS keys | 22 |
+| KMS keys | 25 |
 | S3 (exports and imports) | 18 |
 | IAM roles, users and identity policies | 17 |
 | HTTP/S or Lambda endpoints, which these checks build from Lambda functions and IAM roles | 13 |
 | IAM role and identity-policy enforcement | 9 |
-| IAM roles and role assumption | 8 |
+| IAM roles and role assumption | 9 |
 | Kinesis streaming destinations | 8 |
 | Application Auto Scaling | 6 |
 | CloudWatch Logs delivery-status logging (IAM, Logs) | 4 |
@@ -80,7 +80,6 @@ the port). The *Last changed* column is the last upstream commit to change the c
 | `Validation` | 2 |
 | `DynamoDbDetail` | 1 |
 | `S3AccessControl` | 1 |
-| `S3Detail` | 1 |
 
 ## behavioral/dynamodb
 
@@ -1922,12 +1921,12 @@ the port). The *Last changed* column is the last upstream commit to change the c
 | Check | Last changed | Status | Port or reason |
 |---|---|---|---|
 | `s3.50-bucket-fanout-object-isolation-and-negative-space` | `4df2823` | ported | `S3/Check50BucketFanoutObjectIsolationAndNegativeSpace.cs` |
-| `s3.abac-policy-enforcement` | `4df2823` | **new** |  |
+| `s3.abac-policy-enforcement` | `4df2823` | not ported | IAM roles and role assumption |
 | `s3.abort-multipart-nosuchupload-after-complete` | `4df2823` | ported | `S3/AbortMultipartNosuchuploadAfterComplete.cs` |
 | `s3.acl-disabled-bucket-rejects-put-object-acl` | `4df2823` | ported | `S3/AclDisabledBucketRejectsPutObjectAcl.cs` |
-| `s3.annotation-name-validation-rejected` | `4df2823` | **new** |  |
-| `s3.bucket-abac-invalid-status-rejected` | `4df2823` | **new** |  |
-| `s3.bucket-abac-roundtrip` | `4df2823` | **new** |  |
+| `s3.annotation-name-validation-rejected` | `4df2823` | ported | `S3/AnnotationNameValidationRejected.cs` |
+| `s3.bucket-abac-invalid-status-rejected` | `4df2823` | ported | `S3/BucketAbacInvalidStatusRejected.cs` |
+| `s3.bucket-abac-roundtrip` | `4df2823` | ported | `S3/BucketAbacRoundtrip.cs` |
 | `s3.bucket-accelerate-configuration-roundtrip` | `4df2823` | ported | `S3/BucketAccelerateConfigurationRoundtrip.cs` |
 | `s3.bucket-acl-conflicting-grants-rejected` | `4df2823` | ported | `S3/BucketAclConflictingGrantsRejected.cs` |
 | `s3.bucket-acl-owner-full-control-default` | `4df2823` | ported | `S3/BucketAclOwnerFullControlDefault.cs` |
@@ -1950,15 +1949,15 @@ the port). The *Last changed* column is the last upstream commit to change the c
 | `s3.bucket-inventory-configuration-roundtrip` | `4df2823` | ported | `S3/BucketInventoryConfigurationRoundtrip.cs` |
 | `s3.bucket-logging-config-roundtrip` | `4df2823` | ported | `S3/BucketLoggingConfigRoundtrip.cs` |
 | `s3.bucket-logging-roundtrip` | `4df2823` | ported | `S3/BucketLoggingRoundtrip.cs` |
-| `s3.bucket-metadata-annotation-table-update` | `4df2823` | **new** |  |
-| `s3.bucket-metadata-configuration-duplicate-create-rejected` | `4df2823` | **new** |  |
-| `s3.bucket-metadata-configuration-lifecycle` | `4df2823` | **new** |  |
-| `s3.bucket-metadata-configuration-roundtrip` | `4df2823` | **new** |  |
-| `s3.bucket-metadata-inventory-table-update` | `4df2823` | **new** |  |
-| `s3.bucket-metadata-journal-table-update` | `4df2823` | **new** |  |
-| `s3.bucket-metadata-table-configuration-lifecycle` | `4df2823` | **new** |  |
-| `s3.bucket-metadata-table-update-roundtrip` | `4df2823` | **new** |  |
-| `s3.bucket-metadata-table-updates-refused-while-journal-creating` | `4df2823` | **new** |  |
+| `s3.bucket-metadata-annotation-table-update` | `4df2823` | ported | `S3/BucketMetadataAnnotationTableUpdate.cs` |
+| `s3.bucket-metadata-configuration-duplicate-create-rejected` | `4df2823` | ported | `S3/BucketMetadataConfigurationDuplicateCreateRejected.cs` |
+| `s3.bucket-metadata-configuration-lifecycle` | `4df2823` | ported | `S3/BucketMetadataConfigurationLifecycle.cs` |
+| `s3.bucket-metadata-configuration-roundtrip` | `4df2823` | ported | `S3/BucketMetadataConfigurationRoundtrip.cs` |
+| `s3.bucket-metadata-inventory-table-update` | `4df2823` | ported | `S3/BucketMetadataInventoryTableUpdate.cs` |
+| `s3.bucket-metadata-journal-table-update` | `4df2823` | ported | `S3/BucketMetadataJournalTableUpdate.cs` |
+| `s3.bucket-metadata-table-configuration-lifecycle` | `4df2823` | ported | `S3/BucketMetadataTableConfigurationLifecycle.cs` |
+| `s3.bucket-metadata-table-update-roundtrip` | `4df2823` | ported | `S3/BucketMetadataTableUpdateRoundtrip.cs` |
+| `s3.bucket-metadata-table-updates-refused-while-journal-creating` | `4df2823` | ported | `S3/BucketMetadataTableUpdatesRefusedWhileJournalCreating.cs` |
 | `s3.bucket-metrics-configuration-delete-reflected-in-list-then-get-rejected` | `4df2823` | ported | `S3/BucketMetricsConfigurationDeleteReflectedInListThenGetRejected.cs` |
 | `s3.bucket-metrics-configuration-filter-prefix-and-tag-combo` | `4df2823` | ported | `S3/BucketMetricsConfigurationFilterPrefixAndTagCombo.cs` |
 | `s3.bucket-metrics-configuration-multi-filter-listing` | `4df2823` | ported | `S3/BucketMetricsConfigurationMultiFilterListing.cs` |
@@ -2006,13 +2005,13 @@ the port). The *Last changed* column is the last upstream commit to change the c
 | `s3.content-encoding-preserved` | `4df2823` | ported | `S3/ContentEncodingPreserved.cs` |
 | `s3.content-type-preserved` | `4df2823` | ported | `S3/ContentTypePreserved.cs` |
 | `s3.copy-object-and-ranged-get-return-exact-source-bytes-then-batch-delete-removes-both` | `4df2823` | ported | `S3/CopyObjectAndRangedGetReturnExactSourceBytesThenBatchDeleteRemovesBoth.cs` |
-| `s3.copy-object-annotation-exclude-directive-skips-default-copies` | `4df2823` | **new** |  |
+| `s3.copy-object-annotation-exclude-directive-skips-default-copies` | `4df2823` | ported | `S3/CopyObjectAnnotationExcludeDirectiveSkipsDefaultCopies.cs` |
 | `s3.copy-object-cross-bucket` | `4df2823` | ported | `S3/CopyObjectCrossBucket.cs` |
 | `s3.copy-object-from-specific-version-source` | `4df2823` | ported | `S3/CopyObjectFromSpecificVersionSource.cs` |
 | `s3.copy-object-glacier-not-in-active-tier-error` | `4df2823` | ported | `S3/CopyObjectGlacierNotInActiveTierError.cs` |
 | `s3.copy-object-glacier-source-error` | `4df2823` | ported | `S3/CopyObjectGlacierSourceError.cs` |
 | `s3.copy-object-if-match-on-the-destination-refuses-a-stale-etag` | `4df2823` | ported | `S3/CopyObjectIfMatchOnTheDestinationRefusesAStaleEtag.cs` |
-| `s3.copy-object-into-directory-bucket-rejects-source-tags-and-destination-ssec` | `4df2823` | **new** |  |
+| `s3.copy-object-into-directory-bucket-rejects-source-tags-and-destination-ssec` | `4df2823` | ported | `S3/CopyObjectIntoDirectoryBucketRejectsSourceTagsAndDestinationSsec.cs` |
 | `s3.copy-object-metadata-copy` | `4df2823` | ported | `S3/CopyObjectMetadataCopy.cs` |
 | `s3.copy-object-metadata-replace` | `4df2823` | ported | `S3/CopyObjectMetadataReplace.cs` |
 | `s3.copy-object-missing-source-permission-denied` | `4df2823` | ported | `S3/CopyObjectMissingSourcePermissionDenied.cs` |
@@ -2032,13 +2031,13 @@ the port). The *Last changed* column is the last upstream commit to change the c
 | `s3.cors-presigned-with-origin-without-cors-config-no-cors-headers` | `4df2823` | ported | `S3/CorsPresignedWithOriginWithoutCorsConfigNoCorsHeaders.cs` |
 | `s3.create-bucket-invalid-name-rejected` | `4df2823` | ported | `S3/CreateBucketInvalidNameRejected.cs` |
 | `s3.create-bucket-invalid-name-variants-rejected` | `4df2823` | ported | `S3/CreateBucketInvalidNameVariantsRejected.cs` |
-| `s3.create-bucket-metadata-table-configuration-name-conflict-rejected` | `4df2823` | **new** |  |
+| `s3.create-bucket-metadata-table-configuration-name-conflict-rejected` | `4df2823` | ported | `S3/CreateBucketMetadataTableConfigurationNameConflictRejected.cs` |
 | `s3.create-bucket-reserved-prefix-or-suffix-rejected` | `4df2823` | ported | `S3/CreateBucketReservedPrefixOrSuffixRejected.cs` |
-| `s3.create-session-express-zone` | `4df2823` | **new** |  |
-| `s3.create-session-no-such-bucket` | `4df2823` | **new** |  |
-| `s3.create-session-nosuchbucket` | `4df2823` | **new** |  |
-| `s3.create-session-roundtrip` | `4df2823` | **new** |  |
-| `s3.create-session-token-ttl` | `4df2823` | **new** |  |
+| `s3.create-session-express-zone` | `4df2823` | ported | `S3/CreateSessionExpressZone.cs` |
+| `s3.create-session-no-such-bucket` | `4df2823` | ported | `S3/CreateSessionNoSuchBucket.cs` |
+| `s3.create-session-nosuchbucket` | `4df2823` | ported | `S3/CreateSessionNosuchbucketGeneralPurposeBucket.cs` |
+| `s3.create-session-roundtrip` | `4df2823` | ported | `S3/CreateSessionRoundtrip.cs` |
+| `s3.create-session-token-ttl` | `4df2823` | ported | `S3/CreateSessionTokenTtl.cs` |
 | `s3.deep-s3-immutability-compliance-lock-extends-and-overwrites-but-weakening-rejected` | `4df2823` | ported | `S3/DeepS3ImmutabilityComplianceLockExtendsAndOverwritesButWeakeningRejected.cs` |
 | `s3.deep-s3-immutability-composite-sha256-checksum-reports-parts` | `4df2823` | ported | `S3/DeepS3ImmutabilityCompositeSha256ChecksumReportsParts.cs` |
 | `s3.deep-s3-immutability-copy-metadata-directive-replace-drops-unrestated` | `4df2823` | ported | `S3/DeepS3ImmutabilityCopyMetadataDirectiveReplaceDropsUnrestated.cs` |
@@ -2066,10 +2065,10 @@ the port). The *Last changed* column is the last upstream commit to change the c
 | `s3.deep-s3-storage-class-restore-zero-days-rejected` | `4df2823` | ported | `S3/DeepS3StorageClassRestoreZeroDaysRejected.cs` |
 | `s3.deep-s3-storage-class-versioned-expiration-rule-targets-current-version` | `4df2823` | ported | `S3/DeepS3StorageClassVersionedExpirationRuleTargetsCurrentVersion.cs` |
 | `s3.delete-bucket-holding-only-a-delete-marker-rejected-bucket-not-empty` | `4df2823` | ported | `S3/DeleteBucketHoldingOnlyADeleteMarkerRejectedBucketNotEmpty.cs` |
-| `s3.delete-bucket-with-metadata-table-configuration-blocked` | `4df2823` | **new** |  |
+| `s3.delete-bucket-with-metadata-table-configuration-blocked` | `4df2823` | ported | `S3/DeleteBucketWithMetadataTableConfigurationBlocked.cs` |
 | `s3.delete-nonempty-bucket-rejected-across-20-bucket-fanout` | `4df2823` | ported | `S3/DeleteNonemptyBucketRejectedAcross20BucketFanout.cs` |
-| `s3.delete-object-annotation-error-paths` | `4df2823` | **new** |  |
-| `s3.delete-object-annotation-missing-rejected` | `4df2823` | **new** |  |
+| `s3.delete-object-annotation-error-paths` | `4df2823` | ported | `S3/DeleteObjectAnnotationErrorPaths.cs` |
+| `s3.delete-object-annotation-missing-rejected` | `4df2823` | ported | `S3/DeleteObjectAnnotationMissingRejected.cs` |
 | `s3.delete-object-nonexistent-idempotent` | `4df2823` | ported | `S3/DeleteObjectNonexistentIdempotent.cs` |
 | `s3.delete-object-policy-requires-if-match-header` | `4df2823` | ported | `S3/DeleteObjectPolicyRequiresIfMatchHeader.cs` |
 | `s3.delete-object-under-legal-hold-rejected` | `4df2823` | ported | `S3/DeleteObjectUnderLegalHoldRejected.cs` |
@@ -2086,9 +2085,9 @@ the port). The *Last changed* column is the last upstream commit to change the c
 | `s3.deploy-s3-bucket-default-encryption-applied` | `4df2823` | not ported | CloudFormation stacks |
 | `s3.deploy-s3-bucket-public-access-block-enforced-rejected` | `4df2823` | not ported | CloudFormation stacks |
 | `s3.deploy-s3-bucket-versioning-behavior` | `4df2823` | not ported | CloudFormation stacks |
-| `s3.directory-bucket-multipart-complete-etag-is-not-an-md5-composite` | `4df2823` | **new** |  |
-| `s3.directory-bucket-rejects-object-tagging-versioning-notification-and-replication` | `4df2823` | known gap: S3Detail | `S3/DirectoryBucketRejectsObjectTaggingVersioningNotificationAndReplication.cs` |
-| `s3.directory-buckets-listing` | `4df2823` | **new** |  |
+| `s3.directory-bucket-multipart-complete-etag-is-not-an-md5-composite` | `4df2823` | ported | `S3/DirectoryBucketMultipartCompleteEtagIsNotAnMd5Composite.cs` |
+| `s3.directory-bucket-rejects-object-tagging-versioning-notification-and-replication` | `4df2823` | ported | `S3/DirectoryBucketRejectsObjectTaggingVersioningNotificationAndReplication.cs` |
+| `s3.directory-buckets-listing` | `4df2823` | ported | `S3/DirectoryBucketsListing.cs` |
 | `s3.e2e-log-rotation-pattern` | `4df2823` | ported | `S3/E2eLogRotationPattern.cs` |
 | `s3.e2e-website-deployment` | `4df2823` | ported | `S3/E2eWebsiteDeployment.cs` |
 | `s3.empty-and-odd-sized-objects-under-unicode-keys-round-trip-with-md5-etags` | `4df2823` | ported | `S3/EmptyAndOddSizedObjectsUnderUnicodeKeysRoundTripWithMd5Etags.cs` |
@@ -2105,7 +2104,7 @@ the port). The *Last changed* column is the last upstream commit to change the c
 | `s3.get-bucket-website-not-configured-rejected` | `4df2823` | ported | `S3/GetBucketWebsiteNotConfiguredRejected.cs` |
 | `s3.get-glacier-object-without-restore-rejected` | `4df2823` | ported | `S3/GetGlacierObjectWithoutRestoreRejected.cs` |
 | `s3.get-object-acl-no-such-key` | `4df2823` | ported | `S3/GetObjectAclNoSuchKey.cs` |
-| `s3.get-object-annotation-nosuchannotation` | `4df2823` | **new** |  |
+| `s3.get-object-annotation-nosuchannotation` | `4df2823` | ported | `S3/GetObjectAnnotationNosuchannotation.cs` |
 | `s3.get-object-attributes-invalid-attribute-name-rejected` | `4df2823` | ported | `S3/GetObjectAttributesInvalidAttributeNameRejected.cs` |
 | `s3.get-object-attributes-no-such-key` | `4df2823` | ported | `S3/GetObjectAttributesNoSuchKey.cs` |
 | `s3.get-object-attributes-nosuchkey` | `4df2823` | ported | `S3/GetObjectAttributesNosuchkeyCompact.cs` |
@@ -2129,10 +2128,10 @@ the port). The *Last changed* column is the last upstream commit to change the c
 | `s3.lifecycle-rule-delete` | `4df2823` | ported | `S3/LifecycleRuleDelete.cs` |
 | `s3.lifecycle-rule-roundtrip` | `4df2823` | ported | `S3/LifecycleRuleRoundtrip.cs` |
 | `s3.lifecycle-transition-server-side` | `4df2823` | ported | `S3/LifecycleTransitionServerSide.cs` |
-| `s3.list-directory-buckets-isolation` | `4df2823` | **new** |  |
-| `s3.list-directory-buckets-rejects-regular-bucket-ops` | `4df2823` | **new** |  |
+| `s3.list-directory-buckets-isolation` | `4df2823` | ported | `S3/ListDirectoryBucketsIsolation.cs` |
+| `s3.list-directory-buckets-rejects-regular-bucket-ops` | `4df2823` | ported | `S3/ListDirectoryBucketsRejectsRegularBucketOps.cs` |
 | `s3.list-multipart-uploads-paginates-and-groups-common-prefixes` | `4df2823` | ported | `S3/ListMultipartUploadsPaginatesAndGroupsCommonPrefixes.cs` |
-| `s3.list-object-annotations-invalid-prefix` | `4df2823` | **new** |  |
+| `s3.list-object-annotations-invalid-prefix` | `4df2823` | ported | `S3/ListObjectAnnotationsInvalidPrefix.cs` |
 | `s3.list-object-versions` | `4df2823` | ported | `S3/ListObjectVersions.cs` |
 | `s3.list-object-versions-pages-one-key-written-more-than-one-thousand-times` | `4df2823` | ported | `S3/ListObjectVersionsPagesOneKeyWrittenMoreThanOneThousandTimes.cs` |
 | `s3.list-object-versions-pagination-markers` | `4df2823` | ported | `S3/ListObjectVersionsPaginationMarkers.cs` |
@@ -2146,12 +2145,12 @@ the port). The *Last changed* column is the last upstream commit to change the c
 | `s3.list-objects-v2-is-exact-on-the-first-read-after-a-bulk-delete` | `4df2823` | ported | `S3/ListObjectsV2IsExactOnTheFirstReadAfterABulkDelete.cs` |
 | `s3.list-objects-v2-prefix` | `4df2823` | ported | `S3/ListObjectsV2Prefix.cs` |
 | `s3.list-parts-max-parts-pagination-returns-each-part-once` | `4df2823` | ported | `S3/ListPartsMaxPartsPaginationReturnsEachPartOnce.cs` |
-| `s3.metadata-table-configuration-create-active-status` | `4df2823` | **new** |  |
-| `s3.metadata-table-configuration-delete-removes-table` | `4df2823` | **new** |  |
-| `s3.metadata-table-configuration-duplicate-create-rejected` | `4df2823` | **new** |  |
-| `s3.metadata-table-configuration-get-without-create-rejected` | `4df2823` | **new** |  |
-| `s3.metadata-table-configuration-invalid-schema-rejected` | `4df2823` | **new** |  |
-| `s3.metadata-table-server-managed-updates` | `4df2823` | **new** |  |
+| `s3.metadata-table-configuration-create-active-status` | `4df2823` | ported | `S3/MetadataTableConfigurationCreateActiveStatus.cs` |
+| `s3.metadata-table-configuration-delete-removes-table` | `4df2823` | ported | `S3/MetadataTableConfigurationDeleteRemovesTable.cs` |
+| `s3.metadata-table-configuration-duplicate-create-rejected` | `4df2823` | ported | `S3/MetadataTableConfigurationDuplicateCreateRejected.cs` |
+| `s3.metadata-table-configuration-get-without-create-rejected` | `4df2823` | ported | `S3/MetadataTableConfigurationGetWithoutCreateRejected.cs` |
+| `s3.metadata-table-configuration-invalid-schema-rejected` | `4df2823` | ported | `S3/MetadataTableConfigurationInvalidSchemaRejected.cs` |
+| `s3.metadata-table-server-managed-updates` | `4df2823` | ported | `S3/MetadataTableServerManagedUpdates.cs` |
 | `s3.multipart-abort` | `4df2823` | ported | `S3/MultipartAbort.cs` |
 | `s3.multipart-abort-no-such-upload-rejected` | `4df2823` | ported | `S3/MultipartAbortNoSuchUploadRejected.cs` |
 | `s3.multipart-complete-invalid-part-etag-rejected` | `4df2823` | ported | `S3/MultipartCompleteInvalidPartEtagRejected.cs` |
@@ -2178,13 +2177,13 @@ the port). The *Last changed* column is the last upstream commit to change the c
 | `s3.object-acl-canned-roundtrip` | `4df2823` | ported | `S3/ObjectAclCannedRoundtrip.cs` |
 | `s3.object-acl-lifecycle-nonexistent-key` | `4df2823` | ported | `S3/ObjectAclLifecycleNonexistentKey.cs` |
 | `s3.object-acl-lifecycle-nosuchkey` | `4df2823` | ported | `S3/ObjectAclLifecycleNosuchkey.cs` |
-| `s3.object-annotation-crud-lifecycle` | `4df2823` | **new** |  |
-| `s3.object-annotation-full-crud-lifecycle` | `4df2823` | **new** |  |
-| `s3.object-annotation-name-too-long-rejected` | `4df2823` | **new** |  |
-| `s3.object-annotation-not-found-errors` | `4df2823` | **new** |  |
-| `s3.object-annotation-reserved-prefix-rejected` | `4df2823` | **new** |  |
-| `s3.object-annotation-roundtrip` | `4df2823` | **new** |  |
-| `s3.object-annotation-validation-errors-rejected` | `4df2823` | **new** |  |
+| `s3.object-annotation-crud-lifecycle` | `4df2823` | ported | `S3/ObjectAnnotationCrudLifecycle.cs` |
+| `s3.object-annotation-full-crud-lifecycle` | `4df2823` | ported | `S3/ObjectAnnotationFullCrudLifecycle.cs` |
+| `s3.object-annotation-name-too-long-rejected` | `4df2823` | ported | `S3/ObjectAnnotationNameTooLongRejected.cs` |
+| `s3.object-annotation-not-found-errors` | `4df2823` | ported | `S3/ObjectAnnotationNotFoundErrors.cs` |
+| `s3.object-annotation-reserved-prefix-rejected` | `4df2823` | ported | `S3/ObjectAnnotationReservedPrefixRejected.cs` |
+| `s3.object-annotation-roundtrip` | `4df2823` | ported | `S3/ObjectAnnotationRoundtrip.cs` |
+| `s3.object-annotation-validation-errors-rejected` | `4df2823` | ported | `S3/ObjectAnnotationValidationErrorsRejected.cs` |
 | `s3.object-attributes-reflects-state` | `4df2823` | ported | `S3/ObjectAttributesReflectsState.cs` |
 | `s3.object-attributes-returns-metadata` | `4df2823` | ported | `S3/ObjectAttributesReturnsMetadata.cs` |
 | `s3.object-key-1024-bytes-boundary-rejected` | `4df2823` | ported | `S3/ObjectKey1024BytesBoundaryRejected.cs` |
@@ -2261,21 +2260,21 @@ the port). The *Last changed* column is the last upstream commit to change the c
 | `s3.put-bucket-metrics-configuration-invalid-id-rejected` | `4df2823` | ported | `S3/PutBucketMetricsConfigurationInvalidIdRejected.cs` |
 | `s3.put-get-roundtrip-binary` | `4df2823` | ported | `S3/PutGetRoundtripBinary.cs` |
 | `s3.put-object-acl-no-such-key` | `4df2823` | ported | `S3/PutObjectAclNoSuchKey.cs` |
-| `s3.put-object-annotation-limits` | `4df2823` | **new** |  |
-| `s3.put-object-append-conditional-offset-contention` | `4df2823` | **new** |  |
-| `s3.put-object-append-write-offset-rejected` | `4df2823` | **new** |  |
+| `s3.put-object-annotation-limits` | `4df2823` | ported | `S3/PutObjectAnnotationLimits.cs` |
+| `s3.put-object-append-conditional-offset-contention` | `4df2823` | ported | `S3/PutObjectAppendConditionalOffsetContention.cs` |
+| `s3.put-object-append-write-offset-rejected` | `4df2823` | ported | `S3/PutObjectAppendWriteOffsetRejected.cs` |
 | `s3.put-object-bad-content-md5-rejected` | `4df2823` | ported | `S3/PutObjectBadContentMd5Rejected.cs` |
 | `s3.put-object-conditional-write-optimistic-lock` | `4df2823` | ported | `S3/PutObjectConditionalWriteOptimisticLock.cs` |
 | `s3.put-object-encryption-type-mismatch` | `4df2823` | ported | `S3/PutObjectEncryptionTypeMismatch.cs` |
-| `s3.put-object-encryption-type-mismatch-rejected` | `4df2823` | **new** |  |
+| `s3.put-object-encryption-type-mismatch-rejected` | `4df2823` | ported | `S3/PutObjectEncryptionTypeMismatchRejected.cs` |
 | `s3.put-object-if-match-conditional` | `4df2823` | ported | `S3/PutObjectIfMatchConditional.cs` |
 | `s3.put-object-if-match-matches-an-etag-restored-by-rewriting-identical-bytes` | `4df2823` | ported | `S3/PutObjectIfMatchMatchesAnEtagRestoredByRewritingIdenticalBytes.cs` |
 | `s3.put-object-if-match-refuses-a-composite-etag-replaced-by-another-multipart-upload` | `4df2823` | ported | `S3/PutObjectIfMatchRefusesACompositeEtagReplacedByAnotherMultipartUpload.cs` |
 | `s3.put-object-if-match-takes-a-multipart-etag-and-refuses-it-once-stale` | `4df2823` | ported | `S3/PutObjectIfMatchTakesAMultipartEtagAndRefusesItOnceStale.cs` |
 | `s3.put-object-if-none-match-precondition` | `4df2823` | ported | `S3/PutObjectIfNoneMatchPrecondition.cs` |
 | `s3.put-object-invalid-request-rejected` | `4df2823` | ported | `S3/PutObjectInvalidRequestRejected.cs` |
-| `s3.put-object-invalid-write-offset` | `4df2823` | **new** |  |
-| `s3.put-object-invalid-write-offset-rejected` | `4df2823` | **new** |  |
+| `s3.put-object-invalid-write-offset` | `4df2823` | ported | `S3/PutObjectInvalidWriteOffset.cs` |
+| `s3.put-object-invalid-write-offset-rejected` | `4df2823` | ported | `S3/PutObjectInvalidWriteOffsetRejected.cs` |
 | `s3.put-object-policy-requires-if-none-match-header` | `4df2823` | ported | `S3/PutObjectPolicyRequiresIfNoneMatchHeader.cs` |
 | `s3.put-object-sha1-checksum-round-trip-and-bad-digest-rejected` | `4df2823` | ported | `S3/PutObjectSha1ChecksumRoundTripAndBadDigestRejected.cs` |
 | `s3.put-object-sse-kms-encryption-context-round-trips-then-malformed-rejected` | `4df2823` | not ported | KMS keys |
@@ -2284,14 +2283,14 @@ the port). The *Last changed* column is the last upstream commit to change the c
 | `s3.range-read-open-end` | `4df2823` | ported | `S3/RangeReadOpenEnd.cs` |
 | `s3.range-read-suffix` | `4df2823` | ported | `S3/RangeReadSuffix.cs` |
 | `s3.range-read-unsatisfiable-rejected` | `4df2823` | ported | `S3/RangeReadUnsatisfiableRejected.cs` |
-| `s3.rename-object-concurrent-idempotency` | `4df2823` | **new** |  |
-| `s3.rename-object-destination-exists-rejected` | `4df2823` | **new** |  |
-| `s3.rename-object-idempotency-mismatch` | `4df2823` | **new** |  |
-| `s3.rename-object-idempotency-token` | `4df2823` | **new** |  |
-| `s3.rename-object-idempotency-token-mismatch` | `4df2823` | **new** |  |
-| `s3.rename-object-lifecycle` | `4df2823` | **new** |  |
-| `s3.rename-object-source-if-none-match-precondition-rejected` | `4df2823` | **new** |  |
-| `s3.rename-object-state-transition` | `4df2823` | **new** |  |
+| `s3.rename-object-concurrent-idempotency` | `4df2823` | ported | `S3/RenameObjectConcurrentIdempotency.cs` |
+| `s3.rename-object-destination-exists-rejected` | `4df2823` | ported | `S3/RenameObjectDestinationExistsRejected.cs` |
+| `s3.rename-object-idempotency-mismatch` | `4df2823` | ported | `S3/RenameObjectIdempotencyMismatch.cs` |
+| `s3.rename-object-idempotency-token` | `4df2823` | ported | `S3/RenameObjectIdempotencyToken.cs` |
+| `s3.rename-object-idempotency-token-mismatch` | `4df2823` | ported | `S3/RenameObjectIdempotencyTokenMismatch.cs` |
+| `s3.rename-object-lifecycle` | `4df2823` | ported | `S3/RenameObjectLifecycle.cs` |
+| `s3.rename-object-source-if-none-match-precondition-rejected` | `4df2823` | ported | `S3/RenameObjectSourceIfNoneMatchPreconditionRejected.cs` |
+| `s3.rename-object-state-transition` | `4df2823` | ported | `S3/RenameObjectStateTransition.cs` |
 | `s3.replication-covers-the-eligible-prefix-only-and-withholds-the-delete-marker` | `4df2823` | ported | `S3/ReplicationCoversTheEligiblePrefixOnlyAndWithholdsTheDeleteMarker.cs` |
 | `s3.replication-server-side-execution` | `4df2823` | ported | `S3/ReplicationServerSideExecution.cs` |
 | `s3.requester-pays-enforcement` | `4df2823` | ported | `S3/RequesterPaysEnforcement.cs` |
@@ -2318,7 +2317,7 @@ the port). The *Last changed* column is the last upstream commit to change the c
 | `s3.s3-delete-object-with-a-stale-if-match-etag-is-refused-and-the-object-survives` | `4df2823` | ported | `S3/S3DeleteObjectWithAStaleIfMatchEtagIsRefusedAndTheObjectSurvives.cs` |
 | `s3.s3-delete-objects-batch` | `4df2823` | ported | `S3/S3DeleteObjectsBatch.cs` |
 | `s3.s3-delete-objects-reports-every-requested-key-version-pair-exactly-once` | `4df2823` | ported | `S3/S3DeleteObjectsReportsEveryRequestedKeyVersionPairExactlyOnce.cs` |
-| `s3.s3-express-append-produces-the-exact-concatenation-of-three-offset-writes` | `4df2823` | **new** |  |
+| `s3.s3-express-append-produces-the-exact-concatenation-of-three-offset-writes` | `4df2823` | ported | `S3/S3ExpressAppendProducesTheExactConcatenationOfThreeOffsetWrites.cs` |
 | `s3.s3-full-object-crc64nvme-over-multipart-equals-the-whole-object-checksum` | `4df2823` | ported | `S3/S3FullObjectCrc64nvmeOverMultipartEqualsTheWholeObjectChecksum.cs` |
 | `s3.s3-if-none-match-star-put-is-atomic-across-a-delete-marker` | `4df2823` | ported | `S3/S3IfNoneMatchStarPutIsAtomicAcrossADeleteMarker.cs` |
 | `s3.s3-lcp-rejects-inverted-or-equal-object-size-range` | `4df2823` | ported | `S3/S3LcpRejectsInvertedOrEqualObjectSizeRange.cs` |
@@ -2366,14 +2365,14 @@ the port). The *Last changed* column is the last upstream commit to change the c
 | `s3.s3unicode-list-objects-with-an-unsupported-encoding-type-is-rejected` | `4df2823` | ported | `S3/S3unicodeListObjectsWithAnUnsupportedEncodingTypeIsRejected.cs` |
 | `s3.s3unicode-object-tag-value-with-an-astral-emoji-rejected` | `4df2823` | ported | `S3/S3unicodeObjectTagValueWithAnAstralEmojiRejected.cs` |
 | `s3.s3unicode-rfc3986-reserved-chars-in-a-key-are-literal` | `4df2823` | ported | `S3/S3unicodeRfc3986ReservedCharsInAKeyAreLiteral.cs` |
-| `s3.s3x-s3express-session-and-listing-cross-bucket-token-denied` | `4df2823` | **new** |  |
-| `s3.s3x-s3express-session-and-listing-expired-token-denied` | `4df2823` | **new** |  |
-| `s3.s3x-s3express-session-and-listing-inflight-mpu-prefix-listed` | `4df2823` | **new** |  |
-| `s3.s3x-s3express-session-and-listing-non-slash-delimiter-rejected` | `4df2823` | **new** |  |
-| `s3.s3x-s3express-session-and-listing-readonly-session-put-denied` | `4df2823` | **new** |  |
-| `s3.s3x-s3express-session-and-listing-readwrite-session-round-trip` | `4df2823` | **new** |  |
-| `s3.s3x-s3express-session-and-listing-start-after-rejected` | `4df2823` | **new** |  |
-| `s3.s3x-s3express-session-and-listing-unterminated-prefix-rejected` | `4df2823` | **new** |  |
+| `s3.s3x-s3express-session-and-listing-cross-bucket-token-denied` | `4df2823` | ported | `S3/S3xS3expressSessionAndListingCrossBucketTokenDenied.cs` |
+| `s3.s3x-s3express-session-and-listing-expired-token-denied` | `4df2823` | ported | `S3/S3xS3expressSessionAndListingExpiredTokenDenied.cs` |
+| `s3.s3x-s3express-session-and-listing-inflight-mpu-prefix-listed` | `4df2823` | ported | `S3/S3xS3expressSessionAndListingInflightMpuPrefixListed.cs` |
+| `s3.s3x-s3express-session-and-listing-non-slash-delimiter-rejected` | `4df2823` | ported | `S3/S3xS3expressSessionAndListingNonSlashDelimiterRejected.cs` |
+| `s3.s3x-s3express-session-and-listing-readonly-session-put-denied` | `4df2823` | ported | `S3/S3xS3expressSessionAndListingReadonlySessionPutDenied.cs` |
+| `s3.s3x-s3express-session-and-listing-readwrite-session-round-trip` | `4df2823` | ported | `S3/S3xS3expressSessionAndListingReadwriteSessionRoundTrip.cs` |
+| `s3.s3x-s3express-session-and-listing-start-after-rejected` | `4df2823` | ported | `S3/S3xS3expressSessionAndListingStartAfterRejected.cs` |
+| `s3.s3x-s3express-session-and-listing-unterminated-prefix-rejected` | `4df2823` | ported | `S3/S3xS3expressSessionAndListingUnterminatedPrefixRejected.cs` |
 | `s3.secure-transport-policy-plain-http-denied` | `4df2823` | ported | `S3/SecureTransportPolicyPlainHttpDenied.cs` |
 | `s3.select-object-content-permission-denied` | `4df2823` | not ported | IAM roles, users and identity policies |
 | `s3.sigv4skew-cross-region-credential-scope-rejected` | `4df2823` | ported | `S3/Sigv4skewCrossRegionCredentialScopeRejected.cs` |
@@ -2391,9 +2390,9 @@ the port). The *Last changed* column is the last upstream commit to change the c
 | `s3.ssec-head-object-requires-the-matching-customer-key` | `4df2823` | ported | `S3/SsecHeadObjectRequiresTheMatchingCustomerKey.cs` |
 | `s3.storage-class-reduced-redundancy` | `4df2823` | ported | `S3/StorageClassReducedRedundancy.cs` |
 | `s3.storage-class-standard` | `4df2823` | ported | `S3/StorageClassStandard.cs` |
-| `s3.update-object-encryption-error-paths` | `4df2823` | **new** |  |
-| `s3.update-object-encryption-error-preconditions` | `4df2823` | **new** |  |
-| `s3.update-object-encryption-errors` | `4df2823` | **new** |  |
+| `s3.update-object-encryption-error-paths` | `4df2823` | not ported | KMS keys |
+| `s3.update-object-encryption-error-preconditions` | `4df2823` | not ported | KMS keys |
+| `s3.update-object-encryption-errors` | `4df2823` | not ported | KMS keys |
 | `s3.upload-part-copy-source-if-match-takes-a-composite-etag-and-refuses-it-once-stale` | `4df2823` | ported | `S3/UploadPartCopySourceIfMatchTakesACompositeEtagAndRefusesItOnceStale.cs` |
 | `s3.upload-part-of-twenty-mib-completes-and-reads-back-exactly` | `4df2823` | ported | `S3/UploadPartOfTwentyMibCompletesAndReadsBackExactly.cs` |
 | `s3.versioning-delete-marker` | `4df2823` | ported | `S3/VersioningDeleteMarker.cs` |
