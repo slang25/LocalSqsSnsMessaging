@@ -94,7 +94,7 @@ internal sealed partial class InternalS3Client
             var bucket = GetBucket(request.Bucket);
             if (!bucket.IsEmpty)
             {
-                throw S3Errors.BucketNotEmpty(bucket.Name);
+                throw S3Errors.BucketNotEmpty(bucket.Name, versioned: bucket.Versioning is not null);
             }
 
             Store.Buckets.Remove(bucket.Name);

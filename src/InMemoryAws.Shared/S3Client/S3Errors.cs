@@ -60,8 +60,9 @@ internal static class S3Errors
     public static S3Exception BucketAlreadyExists(string bucket) =>
         new("BucketAlreadyExists", "The requested bucket name is not available. The bucket namespace is shared by all users of the system. Please select a different name and try again.", HttpStatusCode.Conflict, ("BucketName", bucket));
 
-    public static S3Exception BucketNotEmpty(string bucket) =>
-        new("BucketNotEmpty", "The bucket you tried to delete is not empty", HttpStatusCode.Conflict, ("BucketName", bucket));
+    /// <summary>A bucket that still holds objects; a versioned bucket's refusal names the versions too.</summary>
+    public static S3Exception BucketNotEmpty(string bucket, bool versioned = false) =>
+        new("BucketNotEmpty", versioned ? "The bucket you tried to delete is not empty. You must delete all versions in the bucket." : "The bucket you tried to delete is not empty", HttpStatusCode.Conflict, ("BucketName", bucket));
 
     public static S3Exception InvalidBucketName(string? bucket) =>
         new("InvalidBucketName", "The specified bucket is not valid.", HttpStatusCode.BadRequest, ("BucketName", bucket));
