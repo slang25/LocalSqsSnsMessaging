@@ -111,6 +111,7 @@ internal sealed partial class InternalS3Client
         {
             var bucket = GetBucket(request.Bucket);
             var key = CheckKey(request.Key);
+            CheckDeleteConditions(bucket, key, request);
             var result = DeleteOne(bucket, key, request.VersionId, request.BypassGovernanceRetention == true);
             return Task.FromResult(new DeleteObjectOutput
             {

@@ -332,7 +332,7 @@ internal sealed partial class InternalS3Client
 
         if (GetChecksum(request, algorithm) is { } given && given != value && type == "FULL_OBJECT")
         {
-            throw S3Errors.BadDigest($"The {algorithm} you specified did not match the calculated checksum.");
+            throw S3Errors.BadDigest($"The {algorithm.ToLowerInvariant()} you specified did not match the calculated checksum.");
         }
 
         return (algorithm, value, type);

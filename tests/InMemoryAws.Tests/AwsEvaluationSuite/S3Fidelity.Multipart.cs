@@ -101,12 +101,36 @@ public static partial class S3Fidelity
 
     /// <summary>
     /// <c>complete_multipart_upload(MultipartUpload={"Parts": parts})</c> with the parts in the order
-    /// given.
+    /// given. The .NET SDK sorts <c>PartETags</c> by part number before it sends them, so this sends
+    /// the request's XML itself, path style, and raises an error response as the SDK would.
     /// </summary>
-    public static Task<CompleteMultipartUploadResponse> CompleteInListedOrder(FidelityContext ctx, string bucket, string key, string uploadId, List<PartETag> parts)
+    public static async Task CompleteInListedOrder(FidelityContext ctx, string bucket, string key, string uploadId, List<PartETag> parts)
     {
         ArgumentNullException.ThrowIfNull(ctx);
-        return ctx.S3.CompleteMultipartUploadAsync(new CompleteMultipartUploadRequest { BucketName = bucket, Key = key, UploadId = uploadId, PartETags = parts });
+        ArgumentNullException.ThrowIfNull(parts);
+        var xml = new System.Text.StringBuilder("<CompleteMultipartUpload xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">");
+        foreach (var part in parts)
+        {
+            xml.Append("<Part><ETag>").Append(System.Security.SecurityElement.Escape(part.ETag))
+                .Append("</ETag><PartNumber>").Append(part.PartNumber?.ToString(System.Globalization.CultureInfo.InvariantCulture))
+                .Append("</PartNumber></Part>");
+        }
+
+        xml.Append("</CompleteMultipartUpload>");
+        var http = ctx.RawHttpClient(InMemoryAws.Http.AwsServiceType.S3);
+        var path = $"{bucket}/{Uri.EscapeDataString(key)}?uploadId={Uri.EscapeDataString(uploadId)}";
+        using var content = new StringContent(xml.ToString(), System.Text.Encoding.UTF8, "application/xml");
+        using var response = await http.PostAsync(new Uri(path, UriKind.Relative), content, ctx.CancellationToken);
+        var body = await response.Content.ReadAsStringAsync(ctx.CancellationToken);
+        var root = body.Length == 0 ? null : System.Xml.Linq.XDocument.Parse(body).Root;
+        if (!response.IsSuccessStatusCode || root?.Name.LocalName == "Error")
+        {
+            throw new AmazonS3Exception(root?.Element("Message")?.Value)
+            {
+                ErrorCode = root?.Element("Code")?.Value,
+                StatusCode = response.IsSuccessStatusCode ? System.Net.HttpStatusCode.OK : response.StatusCode,
+            };
+        }
     }
 
     /// <summary>

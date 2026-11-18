@@ -112,16 +112,6 @@ internal sealed partial class InternalS3Client
         return described;
     }
 
-    /// <summary>S3 no longer distributes objects over BitTorrent: GetObjectTorrent is refused.</summary>
-    public override Task<GetObjectTorrentOutput> GetObjectTorrentAsync(GetObjectTorrentRequest request, CancellationToken cancellationToken)
-    {
-        lock (Store.Gate)
-        {
-            GetBucket(request.Bucket);
-            throw S3Errors.MethodNotAllowed("GET", "OBJECT");
-        }
-    }
-
     /// <summary>
     /// The version GetObjectAttributes describes: a delete marker is <c>NoSuchKey</c> when current
     /// (with <c>x-amz-delete-marker</c>), and <c>MethodNotAllowed</c> when named by version id.
