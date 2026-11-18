@@ -282,3 +282,14 @@ public static partial class S3Fidelity
     public static string Repr((string? Code, int Status, string? Message) error) =>
         $"({Py.Repr(error.Code)}, {error.Status}, {Py.Repr(error.Message)})";
 }
+
+/// <summary>Appends to directory bucket objects.</summary>
+public static partial class S3Fidelity
+{
+    /// <summary><c>s3.put_object(Bucket=bucket, Key=key, Body=body, WriteOffsetBytes=offset)</c>.</summary>
+    public static Task<PutObjectResponse> Append(IAmazonS3 s3, string bucket, string key, byte[] body, long offset)
+    {
+        ArgumentNullException.ThrowIfNull(s3);
+        return s3.PutObjectAsync(new PutObjectRequest { BucketName = bucket, Key = key, InputStream = new MemoryStream(body), WriteOffsetBytes = offset });
+    }
+}

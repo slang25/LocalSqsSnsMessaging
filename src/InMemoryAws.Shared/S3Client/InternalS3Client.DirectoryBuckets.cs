@@ -177,7 +177,7 @@ internal sealed partial class InternalS3Client
             return;
         }
 
-        CheckDirectoryOperation(bucket, Request?.Operation);
+        CheckDirectoryOperation(Request?.Operation);
         if (Request?.Header("x-amz-s3session-token") is not { } token || Request.Operation == "CreateSession")
         {
             return;
@@ -193,32 +193,20 @@ internal sealed partial class InternalS3Client
     /// <summary>
     /// Refuses what a directory bucket doesn't support: object tags (<c>NotImplemented</c>), and the
     /// versioning, notification and replication configurations, whose documents S3 reads as a
-    /// malformed <c>CreateBucketConfiguration</c> (<c>InvalidArgument</c>). The refusal names the bucket's
-    /// region (<c>x-amz-bucket-region</c>), as S3's do, so SDKs don't go looking for it.
+    /// malformed <c>CreateBucketConfiguration</c> (<c>InvalidArgument</c>).
     /// </summary>
-    private static void CheckDirectoryOperation(S3Bucket bucket, string? operation)
-    {
-        var refusal = Refusal(operation);
-        if (refusal is not null)
-        {
-            throw refusal.WithHeader("x-amz-bucket-region", bucket.Region);
-        }
-    }
-
-    private static S3Exception? Refusal(string? operation)
+    private static void CheckDirectoryOperation(string? operation)
     {
         switch (operation)
         {
             case "PutObjectTagging" or "GetObjectTagging" or "DeleteObjectTagging":
-                return new S3Exception("NotImplemented", "This bucket does not support Object Tags.", HttpStatusCode.NotImplemented);
+                throw new S3Exception("NotImplemented", "This bucket does not support Object Tags.", HttpStatusCode.NotImplemented);
             case "PutBucketVersioning":
-                return S3Errors.InvalidArgument("VersioningConfiguration is not valid, expected CreateBucketConfiguration");
+                throw S3Errors.InvalidArgument("VersioningConfiguration is not valid, expected CreateBucketConfiguration");
             case "PutBucketNotificationConfiguration":
-                return S3Errors.InvalidArgument("NotificationConfiguration is not valid, expected CreateBucketConfiguration");
+                throw S3Errors.InvalidArgument("NotificationConfiguration is not valid, expected CreateBucketConfiguration");
             case "PutBucketReplication":
-                return S3Errors.InvalidArgument("ReplicationConfiguration is not valid, expected CreateBucketConfiguration");
-            default:
-                return null;
+                throw S3Errors.InvalidArgument("ReplicationConfiguration is not valid, expected CreateBucketConfiguration");
         }
     }
 
