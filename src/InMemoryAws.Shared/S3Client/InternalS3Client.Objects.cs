@@ -22,6 +22,7 @@ internal sealed partial class InternalS3Client
         var metadata = request.Metadata ?? new Dictionary<string, string>(StringComparer.Ordinal);
         CheckMetadataSize(metadata);
         var storageClass = CheckStorageClass(request.StorageClass);
+        var sseCustomerKeyMd5 = SseCustomerKeyMd5(request.SSECustomerAlgorithm, request.SSECustomerKey, request.SSECustomerKeyMD5);
 
         lock (Store.Gate)
         {
@@ -47,6 +48,7 @@ internal sealed partial class InternalS3Client
                 ServerSideEncryption = request.ServerSideEncryption ?? DefaultEncryption(bucket)?.SSEAlgorithm ?? "AES256",
                 SseKmsKeyId = request.SSEKMSKeyId ?? (request.ServerSideEncryption is null ? DefaultEncryption(bucket)?.KMSMasterKeyID : null),
                 BucketKeyEnabled = request.BucketKeyEnabled ?? (request.ServerSideEncryption is null ? DefaultBucketKey(bucket) : null),
+                SseCustomerKeyMd5 = sseCustomerKeyMd5,
                 ChecksumAlgorithm = algorithm,
                 Checksum = checksum,
                 ChecksumType = "FULL_OBJECT",
@@ -61,9 +63,11 @@ internal sealed partial class InternalS3Client
             {
                 ETag = version.ETag,
                 VersionId = VersionIdHeader(bucket, version),
-                ServerSideEncryption = version.ServerSideEncryption,
+                ServerSideEncryption = version.SseCustomerKeyMd5 is null ? version.ServerSideEncryption : null,
                 SSEKMSKeyId = version.SseKmsKeyId,
                 BucketKeyEnabled = version.BucketKeyEnabled,
+                SSECustomerAlgorithm = version.SseCustomerKeyMd5 is null ? null : "AES256",
+                SSECustomerKeyMD5 = version.SseCustomerKeyMd5,
                 ChecksumType = version.ChecksumType,
             };
             SetChecksum(output, version.ChecksumAlgorithm, version.Checksum);
