@@ -10,7 +10,6 @@ namespace InMemoryAws.Tests.AwsEvaluationSuite.S3Sqs;
 
 /// <summary>s3__sqs.a-denied-put-creates-no-object-and-emits-no-notification</summary>
 [Category("AwsEvaluationSuite")]
-[KnownFidelityGap(FidelityGap.S3AccessControl, "Needs PutBucketPolicy, GetBucketPolicy and DeleteBucketPolicy with Deny statements enforced on PutObject, which another S3 area implements.")]
 public sealed class ADeniedPutCreatesNoObjectAndEmitsNoNotification
 {
     private const string Check = "a-denied-put-creates-no-object-and-emits-no-notification";

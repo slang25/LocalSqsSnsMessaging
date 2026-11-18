@@ -41,7 +41,6 @@ public sealed partial class APostObjectUploadIsWithheldFromAPutobjectScopedRule
     [Test]
     [DisplayName("events__s3__sqs.a-post-object-upload-is-withheld-from-a-putobject-scoped-rule")]
     [Timeout(FidelityContext.HangTimeoutMilliseconds)]
-    [KnownFidelityGap(FidelityGap.S3Detail, "POST Object (browser form upload) is another S3 area's operation; once it stores the object and calls NotifyObjectEvent(\"ObjectCreated:Post\") this should pass")]
     public async Task Run(CancellationToken cancellationToken)
     {
         await using var ctx = new FidelityContext(FidelityContext.BudgetMilliseconds, cancellationToken);
@@ -260,7 +259,7 @@ public sealed partial class APostObjectUploadIsWithheldFromAPutobjectScopedRule
         if (ctx.Region != "us-east-1")
         {
             // region-pinned API quirk, not a hardcoded region
-            request.PutBucketConfiguration = new PutBucketConfiguration { LocationConstraint = new S3Region(ctx.Region) };
+            request.PutBucketConfiguration = new PutBucketConfiguration { LocationConstraint = new BucketLocationConstraint(ctx.Region) };
         }
 
         await s3.PutBucketAsync(request);

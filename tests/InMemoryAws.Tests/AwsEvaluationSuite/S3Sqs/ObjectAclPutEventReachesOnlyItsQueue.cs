@@ -9,7 +9,6 @@ namespace InMemoryAws.Tests.AwsEvaluationSuite.S3Sqs;
 
 /// <summary>s3__sqs.object-acl-put-event-reaches-only-its-queue</summary>
 [Category("AwsEvaluationSuite")]
-[KnownFidelityGap(FidelityGap.S3AccessControl, "Needs PutObjectAcl and GetObjectAcl, which another S3 area implements; PutObjectAcl must then call NotifyObjectEvent with ObjectAcl:Put.")]
 public sealed class ObjectAclPutEventReachesOnlyItsQueue
 {
     private const string Check = "object-acl-put-event-reaches-only-its-queue";

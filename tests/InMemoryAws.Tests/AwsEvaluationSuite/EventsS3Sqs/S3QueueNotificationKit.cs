@@ -285,6 +285,13 @@ internal static class S3QueueNotificationKit
     /// HTTP class of <paramref name="status"/> (exactly <paramref name="status"/> when
     /// <paramref name="exact"/>), with exactly <paramref name="message"/>.
     /// </summary>
+    /// <summary>
+    /// <c>Error.Code</c> as botocore reports it: for a bodiless error response (a HEAD request's),
+    /// the bare HTTP status, where the .NET SDK names the status.
+    /// </summary>
+    private static string? BotocoreCode(AwsError err) =>
+        S3CoreFidelity.BotocoreMessage(err) != err.Message ? ((int)err.StatusCode).ToString(System.Globalization.CultureInfo.InvariantCulture) : err.Code;
+
     public static async Task Refused(Func<Task> fn, string[] codes, int status, string what, string message, bool exact = false)
     {
         var err = await FidelityContext.CaptureError(fn)
@@ -292,11 +299,13 @@ internal static class S3QueueNotificationKit
         var got = (int)err.StatusCode;
         var want = exact ? status.ToString(System.Globalization.CultureInfo.InvariantCulture) : $"{status / 100}xx";
         var inClass = exact ? got == status : got / 100 == status / 100;
-        var msg = err.Message ?? string.Empty;
+        // botocore's message for a bodiless (HEAD) refusal is the reason phrase.
+        var msg = S3CoreFidelity.BotocoreMessage(err) ?? string.Empty;
+        var code = BotocoreCode(err);
         Ensure(
-            codes.Contains(err.Code) && inClass,
-            $"{what}: expected {string.Join("/", codes)} HTTP {want}, got {Py.Repr(err.Code)} HTTP {got}: {Py.Repr(msg[..Math.Min(150, msg.Length)])}");
-        Ensure(msg == message, $"{what}: {err.Code} message: expected {Py.Repr(message)}, got {Py.Repr(msg)}");
+            codes.Contains(code) && inClass,
+            $"{what}: expected {string.Join("/", codes)} HTTP {want}, got {Py.Repr(code)} HTTP {got}: {Py.Repr(msg[..Math.Min(150, msg.Length)])}");
+        Ensure(msg == message, $"{what}: {code} message: expected {Py.Repr(message)}, got {Py.Repr(msg)}");
     }
 
     /// <summary>
@@ -312,7 +321,7 @@ internal static class S3QueueNotificationKit
             var err = await FidelityContext.CaptureError(fn);
             if (err is not null)
             {
-                if (codes.Contains(err.Code))
+                if (codes.Contains(BotocoreCode(err)))
                 {
                     await Refused(fn, codes, status, what, message, exact);
                     return;

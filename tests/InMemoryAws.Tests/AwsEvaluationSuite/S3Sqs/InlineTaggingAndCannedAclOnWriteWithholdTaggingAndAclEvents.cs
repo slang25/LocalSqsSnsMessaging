@@ -9,7 +9,6 @@ namespace InMemoryAws.Tests.AwsEvaluationSuite.S3Sqs;
 
 /// <summary>s3__sqs.inline-tagging-and-canned-acl-on-write-withhold-tagging-and-acl-events</summary>
 [Category("AwsEvaluationSuite")]
-[KnownFidelityGap(FidelityGap.S3AccessControl, "The closing leg needs PutObjectAcl, which another S3 area implements; PutObjectAcl must then call NotifyObjectEvent with ObjectAcl:Put.")]
 public sealed class InlineTaggingAndCannedAclOnWriteWithholdTaggingAndAclEvents
 {
     private const string Check = "inline-tagging-and-canned-acl-on-write-withhold-tagging-and-acl-events";

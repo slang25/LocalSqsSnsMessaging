@@ -24,7 +24,6 @@ public sealed class ObsS33AclRejectedUnderBucketOwnerEnforcedEmitsNoEvent
     [Test]
     [DisplayName("events__s3__sqs.obs-s3-3-acl-rejected-under-bucket-owner-enforced-emits-no-event")]
     [Timeout(FidelityContext.HangTimeoutMilliseconds)]
-    [KnownFidelityGap(FidelityGap.S3AccessControl, "Object ACLs and ownership controls (Get/PutBucketOwnershipControls, Get/PutObjectAcl) are another S3 area's operations; once they call NotifyObjectEvent(\"ObjectAcl:Put\") on success this should pass")]
     public async Task Run(CancellationToken cancellationToken)
     {
         await using var ctx = new FidelityContext(FidelityContext.BudgetMilliseconds, cancellationToken);
@@ -63,7 +62,7 @@ public sealed class ObsS33AclRejectedUnderBucketOwnerEnforcedEmitsNoEvent
         var key = FidelityContext.UniqueName("acl-");
         await s3.PutObjectAsync(new PutObjectRequest { BucketName = bucket, Key = key, ContentBody = "sim2real-acl-rejected" });
         var owner = (await s3.GetObjectAclAsync(new GetObjectAclRequest { BucketName = bucket, Key = key })).Owner.Id;
-        var policy = new AccessControlPolicy
+        var policy = new S3AccessControlList
         {
             Owner = new Owner { Id = owner },
             Grants =

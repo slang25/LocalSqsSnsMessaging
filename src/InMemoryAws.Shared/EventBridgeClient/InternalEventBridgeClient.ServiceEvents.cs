@@ -35,7 +35,8 @@ internal sealed partial class InternalEventBridgeClient
             ["time"] = now.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture),
             ["region"] = _resources.Region,
             ["resources"] = resourceArray,
-            ["detail"] = detail,
+            // Read back from JSON, as a PutEvents entry's Detail is, so rules match its values as they match any event's.
+            ["detail"] = EventBridgeEnvelope.ParseDetail(detail.ToJsonString()),
         };
 
         EventBridgeEventDelivery.Route(eventBus, new EventBridgeEvent { Envelope = envelope, IngestionTime = now }, _cloud);

@@ -40,7 +40,6 @@ public sealed class ObjectRestoreInitiatedAndTagsAddedCarryTheirOwnDetailTypes
     [Test]
     [DisplayName("events__s3__sqs.object-restore-initiated-and-tags-added-carry-their-own-detail-types")]
     [Timeout(FidelityContext.HangTimeoutMilliseconds)]
-    [KnownFidelityGap(FidelityGap.S3Detail, "RestoreObject is another S3 area's operation; once it calls NotifyObjectEvent(\"ObjectRestore:Post\") and HeadObject reports the restore in flight this should pass")]
     public async Task Run(CancellationToken cancellationToken)
     {
         await using var ctx = new FidelityContext(FidelityContext.BudgetMilliseconds, cancellationToken);
@@ -53,7 +52,7 @@ public sealed class ObjectRestoreInitiatedAndTagsAddedCarryTheirOwnDetailTypes
         var create = new PutBucketRequest { BucketName = bucket, UseClientRegion = false };
         if (ctx.Region != "us-east-1")
         {
-            create.PutBucketConfiguration = new PutBucketConfiguration { LocationConstraint = new S3Region(ctx.Region) };
+            create.PutBucketConfiguration = new PutBucketConfiguration { LocationConstraint = new BucketLocationConstraint(ctx.Region) };
         }
 
         await s3.PutBucketAsync(create);
@@ -150,7 +149,7 @@ public sealed class ObjectRestoreInitiatedAndTagsAddedCarryTheirOwnDetailTypes
         // botocore's Restore is the raw x-amz-restore header; the .NET SDK parses its ongoing-request.
         var ongoing = await Poll(
             ctx,
-            async () => (await s3.GetObjectMetadataAsync(bucket, key)).RestoreInProgress ? "ongoing-request=\"true\"" : null,
+            async () => (await s3.GetObjectMetadataAsync(bucket, key)).RestoreInProgress == true ? "ongoing-request=\"true\"" : null,
             r => r is not null && r.Contains("ongoing-request=\"true\"", StringComparison.Ordinal),
             timeoutS: 60.0,
             what: $"HeadObject reporting an in-flight restore for {Py.Repr(key)}");

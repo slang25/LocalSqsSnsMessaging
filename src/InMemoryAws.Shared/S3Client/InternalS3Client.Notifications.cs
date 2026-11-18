@@ -179,6 +179,9 @@ internal sealed partial class InternalS3Client
     partial void OnObjectTagged(S3Bucket bucket, S3ObjectVersion version, string eventName) =>
         NotifyObjectEvent(bucket, version, eventName);
 
+    partial void OnObjectAclPut(S3Bucket bucket, S3ObjectVersion version) =>
+        NotifyObjectEvent(bucket, version, "ObjectAcl:Put");
+
     /// <summary>
     /// Sends an object event to every destination of the bucket's configuration that subscribes to
     /// it, and to EventBridge when the bucket sends events there. Call under the store's lock, after

@@ -108,6 +108,10 @@ public sealed class FidelityContext : IAsyncDisposable
             // As in AWS, only existing KMS keys work.
             KmsKeyAliases = new HashSet<string>(StringComparer.Ordinal),
 
+            // As in AWS, S3 authenticates requests signed with the checks' credentials (access key
+            // "test", secret "test"): their signatures, request times and presigned URL expiries.
+            SecretAccessKeys = new Dictionary<string, string>(StringComparer.Ordinal) { ["test"] = "test" },
+
             // As in AWS, a vector index UpdateTable adds is CREATING for a while (allocating, then
             // backfilling) before it is ACTIVE. AWS takes minutes; this is short enough for a
             // check's budget and long enough for a check to see each phase.
@@ -332,16 +336,18 @@ public sealed class FidelityContext : IAsyncDisposable
     /// <param name="maxAttempts">botocore's <c>max_attempts</c>: attempts in all, retries included.</param>
     /// <param name="requestChecksumCalculation">botocore's <c>request_checksum_calculation</c>.</param>
     /// <param name="accessKey">The access key the client signs with.</param>
+    /// <param name="plainHttp">True for an <c>endpoint_url</c> with the <c>http</c> scheme: requests go without TLS.</param>
     public AmazonS3Client S3Client(
         string? region = null,
         bool pathStyle = false,
         bool unsigned = false,
         int maxAttempts = 3,
         RequestChecksumCalculation? requestChecksumCalculation = null,
-        string accessKey = "test")
+        string accessKey = "test",
+        bool plainHttp = false)
     {
         region ??= Region;
-        var key = $"{region}|{pathStyle}|{unsigned}|{maxAttempts}|{requestChecksumCalculation}|{accessKey}";
+        var key = $"{region}|{pathStyle}|{unsigned}|{maxAttempts}|{requestChecksumCalculation}|{accessKey}|{plainHttp}";
         if (_s3Clients.TryGetValue(key, out var existing))
         {
             return existing;
@@ -351,6 +357,7 @@ public sealed class FidelityContext : IAsyncDisposable
         {
             RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(region),
             ForcePathStyle = pathStyle,
+            UseHttp = plainHttp,
             RetryMode = RequestRetryMode.Standard,
             MaxErrorRetry = Math.Max(0, maxAttempts - 1),
             HttpClientFactory = new VirtualTimeHttpClientFactory(_s3Handler),

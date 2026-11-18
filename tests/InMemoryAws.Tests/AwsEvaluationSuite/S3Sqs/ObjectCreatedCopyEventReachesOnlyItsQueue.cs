@@ -2,6 +2,7 @@
 // (https://github.com/aws/aws-emulator-evaluation-suite, commit 4df2823).
 using System.Text;
 using System.Text.Json.Nodes;
+using Amazon.S3;
 using Amazon.S3.Model;
 using static InMemoryAws.Tests.AwsEvaluationSuite.FidelityAssert;
 using static InMemoryAws.Tests.AwsEvaluationSuite.S3Sqs.S3EventFamilyQueues;

@@ -159,7 +159,7 @@ public sealed partial class S3SequencerIsTheOnlyTotalOrderOverOneKey
         var versions = new List<string>();
         var markers = new List<string>();
         var listed = new HashSet<string>(StringComparer.Ordinal);
-        await foreach (var page in s3.Paginators.ListObjectVersions(new ListObjectVersionsRequest { BucketName = bucket }).Responses)
+        await foreach (var page in s3.Paginators.ListVersions(new ListVersionsRequest { BucketName = bucket }).Responses)
         {
             foreach (var v in page.Versions ?? [])
             {
@@ -258,11 +258,11 @@ public sealed partial class S3SequencerIsTheOnlyTotalOrderOverOneKey
         var last = ordered[^1];
         if (last.Name.StartsWith("ObjectRemoved", StringComparison.Ordinal))
         {
-            var headErr = await Error(() => s3.GetObjectMetadataAsync(bucket, Key));
-            // botocore reports a HEAD error's bare status as its code ("404"); the .NET SDK names
-            // the same bodiless 404 "NotFound".
+            // botocore reports a HEAD error's bare status as its code ("404") and its reason phrase as
+            // the message; S3Fidelity.HeadError reads the .NET SDK's error the same way.
+            var headErr = await S3Fidelity.HeadError(s3, bucket, Key);
             Ensure(
-                headErr.Code is "404" or "NotFound" && headErr.Message == "Not Found",
+                headErr == ("404", "Not Found"),
                 $"the greatest sequencer belongs to {Py.Repr(last.Name)} (version {Py.Repr(last.Version)}), so the key's " +
                 "current version must be a delete marker and HeadObject must be a 404 'Not Found'; " +
                 $"it raised {headErr}");
@@ -564,7 +564,7 @@ public sealed partial class S3SequencerIsTheOnlyTotalOrderOverOneKey
     private static async Task EmptyAndDeleteBucket(AmazonS3Client s3, string bucket)
     {
         var targets = new List<KeyVersion>();
-        await foreach (var page in s3.Paginators.ListObjectVersions(new ListObjectVersionsRequest { BucketName = bucket }).Responses)
+        await foreach (var page in s3.Paginators.ListVersions(new ListVersionsRequest { BucketName = bucket }).Responses)
         {
             targets.AddRange((page.Versions ?? []).Select(o => new KeyVersion { Key = o.Key, VersionId = o.VersionId }));
         }

@@ -20,7 +20,7 @@ internal static class S3SnsTeardown
 
     /// <summary>(code, HTTP status, message) of a ClientError.</summary>
     private static (string Code, int Status, string Message) Err(AwsError err) =>
-        (err.Code ?? string.Empty, (int)err.StatusCode, err.Message ?? string.Empty);
+        (err.Code ?? string.Empty, (int)err.StatusCode, S3CoreFidelity.BotocoreMessage(err) ?? string.Empty);
 
     /// <summary><c>fn()</c> must fail with one of <c>codes</c> at <c>status</c> and exactly <c>message</c>.</summary>
     public static async Task Refused(Func<Task> fn, string[] codes, int status, string what, string message)
@@ -127,7 +127,7 @@ internal static class S3SnsTeardown
 
     private static async Task EmptyBucket(Amazon.S3.IAmazonS3 s3, string bucket)
     {
-        await foreach (var page in s3.Paginators.ListObjectVersions(new ListObjectVersionsRequest { BucketName = bucket }).Responses)
+        await foreach (var page in s3.Paginators.ListVersions(new ListVersionsRequest { BucketName = bucket }).Responses)
         {
             var objs = (page.Versions ?? []).Select(o => new KeyVersion { Key = o.Key, VersionId = o.VersionId }).ToList();
             if (objs.Count > 0)

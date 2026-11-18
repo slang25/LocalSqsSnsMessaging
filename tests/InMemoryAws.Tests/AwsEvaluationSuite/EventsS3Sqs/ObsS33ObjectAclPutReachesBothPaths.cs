@@ -21,7 +21,6 @@ public sealed class ObsS33ObjectAclPutReachesBothPaths
     [Test]
     [DisplayName("events__s3__sqs.obs-s3-3-object-acl-put-reaches-both-paths")]
     [Timeout(FidelityContext.HangTimeoutMilliseconds)]
-    [KnownFidelityGap(FidelityGap.S3AccessControl, "Object ACLs and ownership controls (PutBucketOwnershipControls, Get/PutObjectAcl) are another S3 area's operations; once they call NotifyObjectEvent(\"ObjectAcl:Put\") this should pass")]
     public async Task Run(CancellationToken cancellationToken)
     {
         await using var ctx = new FidelityContext(FidelityContext.BudgetMilliseconds, cancellationToken);
@@ -77,7 +76,7 @@ public sealed class ObsS33ObjectAclPutReachesBothPaths
         {
             BucketName = bucket,
             Key = key,
-            AccessControlPolicy = new AccessControlPolicy
+            AccessControlPolicy = new S3AccessControlList
             {
                 Owner = new Owner { Id = owner.Id },
                 Grants =

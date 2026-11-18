@@ -1,6 +1,7 @@
 // Translated from behavioral/s3__sqs/check_an_aborted_multipart_upload_emits_no_object_created_notification.py
 // (https://github.com/aws/aws-emulator-evaluation-suite, commit 4df2823).
 using System.Text.Json.Nodes;
+using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.SQS.Model;
 using static InMemoryAws.Tests.AwsEvaluationSuite.FidelityAssert;

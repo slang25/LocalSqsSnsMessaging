@@ -36,7 +36,7 @@ public sealed class DirectoryBucketRejectsObjectTaggingVersioningNotificationAnd
     [Test]
     [DisplayName("s3.directory-bucket-rejects-object-tagging-versioning-notification-and-replication")]
     [Timeout(FidelityContext.HangTimeoutMilliseconds)]
-    [KnownFidelityGap(FidelityGap.S3Detail, "Directory buckets (S3 Express One Zone) and PutBucketReplication are served by other S3 areas; until they are, CreateBucket refuses the --x-s3 name.")]
+    [KnownFidelityGap(FidelityGap.S3Detail, "Directory buckets (S3 Express One Zone) are not emulated: the SDK addresses them at their zonal s3express endpoint, which the cloud doesn't serve.")]
     public async Task Run(CancellationToken cancellationToken)
     {
         await using var ctx = new FidelityContext(FidelityContext.BudgetMilliseconds, cancellationToken);

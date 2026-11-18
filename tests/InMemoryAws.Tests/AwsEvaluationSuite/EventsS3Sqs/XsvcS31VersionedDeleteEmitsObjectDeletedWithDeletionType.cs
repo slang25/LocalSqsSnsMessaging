@@ -183,7 +183,7 @@ public sealed class XsvcS31VersionedDeleteEmitsObjectDeletedWithDeletionType
         var request = new PutBucketRequest { BucketName = bucket, UseClientRegion = false };
         if (ctx.Region != "us-east-1")
         {
-            request.PutBucketConfiguration = new PutBucketConfiguration { LocationConstraint = new S3Region(ctx.Region) };
+            request.PutBucketConfiguration = new PutBucketConfiguration { LocationConstraint = new BucketLocationConstraint(ctx.Region) };
         }
 
         await s3.PutBucketAsync(request);

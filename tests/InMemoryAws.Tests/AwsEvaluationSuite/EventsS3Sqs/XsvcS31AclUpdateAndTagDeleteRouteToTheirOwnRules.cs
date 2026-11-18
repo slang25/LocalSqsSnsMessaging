@@ -36,7 +36,6 @@ public sealed class XsvcS31AclUpdateAndTagDeleteRouteToTheirOwnRules
     [Test]
     [DisplayName("events__s3__sqs.xsvc-s3-1-acl-update-and-tag-delete-route-to-their-own-rules")]
     [Timeout(FidelityContext.HangTimeoutMilliseconds)]
-    [KnownFidelityGap(FidelityGap.S3AccessControl, "Object ACLs and ownership controls (CreateBucket's ObjectOwnership, Get/PutObjectAcl) are another S3 area's operations; once PutObjectAcl calls NotifyObjectEvent(\"ObjectAcl:Put\") this should pass")]
     public async Task Run(CancellationToken cancellationToken)
     {
         await using var ctx = new FidelityContext(FidelityContext.BudgetMilliseconds, cancellationToken);
@@ -180,7 +179,7 @@ public sealed class XsvcS31AclUpdateAndTagDeleteRouteToTheirOwnRules
         var request = new PutBucketRequest { BucketName = bucket, UseClientRegion = false, ObjectOwnership = ObjectOwnership.BucketOwnerPreferred };
         if (ctx.Region != "us-east-1")
         {
-            request.PutBucketConfiguration = new PutBucketConfiguration { LocationConstraint = new S3Region(ctx.Region) };
+            request.PutBucketConfiguration = new PutBucketConfiguration { LocationConstraint = new BucketLocationConstraint(ctx.Region) };
         }
 
         await s3.PutBucketAsync(request);

@@ -107,7 +107,7 @@ internal static class S3EventFamilyQueues
         await s3.PutBucketNotificationAsync(new PutBucketNotificationRequest { BucketName = bucket.Name, QueueConfigurations = configs });
         var got = await s3.GetBucketNotificationAsync(bucket.Name);
         var installed = (got.QueueConfigurations ?? []).ToDictionary(c => c.Id, c => Events(c));
-        var expected = Families.ToDictionary(f => f.Label, f => f.Event);
+        var expected = Families.ToDictionary(f => f.Label, f => "[" + Py.Repr(f.Event) + "]");
         foreach (var c in extra ?? [])
         {
             expected[c.Id] = Events(c);

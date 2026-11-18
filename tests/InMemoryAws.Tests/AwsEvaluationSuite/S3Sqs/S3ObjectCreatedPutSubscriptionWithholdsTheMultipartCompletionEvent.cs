@@ -2,6 +2,7 @@
 // (https://github.com/aws/aws-emulator-evaluation-suite, commit 4df2823).
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.SQS;
 using Amazon.SQS.Model;

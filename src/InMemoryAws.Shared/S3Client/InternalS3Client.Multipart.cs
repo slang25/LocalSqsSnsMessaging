@@ -75,6 +75,7 @@ internal sealed partial class InternalS3Client
                 OwnerId = OwnerId,
             };
             OnUploadCreated(bucket, upload, request);
+            ApplyAbortRule(bucket, upload);
             bucket.Uploads.Add(upload.UploadId, upload);
             return Task.FromResult(new CreateMultipartUploadOutput
             {
@@ -88,6 +89,8 @@ internal sealed partial class InternalS3Client
                 SSECustomerKeyMD5 = request.SSECustomerKeyMD5,
                 ChecksumAlgorithm = upload.ChecksumAlgorithm,
                 ChecksumType = upload.ChecksumType,
+                AbortDate = upload.AbortDate,
+                AbortRuleId = upload.AbortRuleId,
             });
         }
     }
@@ -283,6 +286,7 @@ internal sealed partial class InternalS3Client
             bucket.CompletedUploads.Add(upload.UploadId);
             bucket.Add(version);
             OnObjectWritten(bucket, version, "ObjectCreated:CompleteMultipartUpload");
+            ReplicateWrite(bucket, version);
             var output = new CompleteMultipartUploadOutput
             {
                 Location = $"https://{bucket.Name}.s3.{bucket.Region}.amazonaws.com/{Uri.EscapeDataString(key).Replace("%2F", "/", StringComparison.Ordinal)}",
@@ -332,22 +336,22 @@ internal sealed partial class InternalS3Client
 
         if (GetChecksum(request, algorithm) is { } given && given != value && type == "FULL_OBJECT")
         {
-            throw S3Errors.BadDigest($"The {algorithm} you specified did not match the calculated checksum.");
+            throw S3Errors.BadDigest($"The {algorithm.ToLowerInvariant()} you specified did not match the calculated checksum.");
         }
 
         return (algorithm, value, type);
     }
 
     /// <summary>
-    /// Aborts an upload and drops its parts. An upload completed a moment ago is answered as aborted;
-    /// any other unknown upload is <c>NoSuchUpload</c>.
+    /// Aborts an upload and drops its parts. An upload completed or aborted before is answered as
+    /// aborted again; any other unknown upload is <c>NoSuchUpload</c>.
     /// </summary>
     public override Task<AbortMultipartUploadOutput> AbortMultipartUploadAsync(AbortMultipartUploadRequest request, CancellationToken cancellationToken)
     {
         lock (Store.Gate)
         {
             var bucket = GetBucket(request.Bucket);
-            if (request.UploadId is { } uploadId && bucket.CompletedUploads.Contains(uploadId))
+            if (request.UploadId is { } uploadId && (bucket.CompletedUploads.Contains(uploadId) || bucket.AbortedUploads.Contains(uploadId)))
             {
                 return Task.FromResult(new AbortMultipartUploadOutput());
             }
@@ -359,6 +363,7 @@ internal sealed partial class InternalS3Client
             }
 
             bucket.Uploads.Remove(upload.UploadId);
+            bucket.AbortedUploads.Add(upload.UploadId);
             return Task.FromResult(new AbortMultipartUploadOutput());
         }
     }
@@ -495,6 +500,8 @@ internal sealed partial class InternalS3Client
                 StorageClass = upload.StorageClass,
                 ChecksumAlgorithm = upload.ChecksumAlgorithm,
                 ChecksumType = upload.ChecksumType,
+                AbortDate = upload.AbortDate,
+                AbortRuleId = upload.AbortRuleId,
             };
             foreach (var part in page)
             {

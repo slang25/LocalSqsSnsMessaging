@@ -15,6 +15,7 @@ internal sealed partial class InternalS3Client
     public override Task<CreateBucketOutput> CreateBucketAsync(CreateBucketRequest request, CancellationToken cancellationToken)
     {
         var name = request.Bucket ?? string.Empty;
+        CheckReservedBucketName(name, request);
         if (!S3BucketNames.IsValid(name))
         {
             throw S3Errors.InvalidBucketName(name);
@@ -94,7 +95,7 @@ internal sealed partial class InternalS3Client
             var bucket = GetBucket(request.Bucket);
             if (!bucket.IsEmpty)
             {
-                throw S3Errors.BucketNotEmpty(bucket.Name);
+                throw S3Errors.BucketNotEmpty(bucket.Name, versioned: bucket.Versioning is not null);
             }
 
             Store.Buckets.Remove(bucket.Name);

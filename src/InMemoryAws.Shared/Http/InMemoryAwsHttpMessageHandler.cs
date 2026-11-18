@@ -215,24 +215,32 @@ public sealed class InMemoryAwsHttpMessageHandler : DelegatingHandler
     private async Task<HttpResponseMessage> SendS3Async(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         using var body = await PooledRequestBody.ReadAsync(request.Content, cancellationToken).ConfigureAwait(false);
+        // Multi-valued headers joined as HttpClient writes them on the wire (and as clients sign them).
         var headers = new List<KeyValuePair<string, string>>();
         foreach (var header in request.Headers)
         {
-            headers.Add(new KeyValuePair<string, string>(header.Key, string.Join(",", header.Value)));
+            headers.Add(new KeyValuePair<string, string>(header.Key, string.Join(", ", header.Value)));
         }
 
         if (request.Content is not null)
         {
             foreach (var header in request.Content.Headers)
             {
-                headers.Add(new KeyValuePair<string, string>(header.Key, string.Join(",", header.Value)));
+                headers.Add(new KeyValuePair<string, string>(header.Key, string.Join(", ", header.Value)));
             }
+        }
+
+        // The Host header a client signs, which HttpClient would add on the wire.
+        if (request.Headers.Host is null && request.RequestUri is { IsAbsoluteUri: true } requestUri)
+        {
+            headers.Add(new KeyValuePair<string, string>("Host", requestUri.Authority));
         }
 
         var (host, path, query) = SplitUri(request.RequestUri);
         var wireRequest = new S3WireRequest(request.Method.Method, host, path, query, headers, body.Memory)
         {
             Region = AwsRequestRegion.FromRequest(request),
+            SecureTransport = !string.Equals(request.RequestUri?.Scheme, "http", StringComparison.OrdinalIgnoreCase),
         };
         var wire = await S3WireProtocol.HandleAsync(wireRequest, _cloud, cancellationToken).ConfigureAwait(false);
         var payload = wire.Body;
