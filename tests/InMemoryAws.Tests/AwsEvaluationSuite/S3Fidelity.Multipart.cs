@@ -55,24 +55,6 @@ public static partial class S3Fidelity
         return HeadError(error);
     }
 
-    /// <summary>botocore's <c>(Code, Message)</c> for a HEAD error: the status code and its reason phrase.</summary>
-    public static (string? Code, string? Message) HeadError(AwsError error)
-    {
-        ArgumentNullException.ThrowIfNull(error);
-        var status = (int)error.StatusCode;
-        var reason = error.StatusCode switch
-        {
-            System.Net.HttpStatusCode.NotFound => "Not Found",
-            System.Net.HttpStatusCode.Forbidden => "Forbidden",
-            System.Net.HttpStatusCode.BadRequest => "Bad Request",
-            System.Net.HttpStatusCode.PreconditionFailed => "Precondition Failed",
-            System.Net.HttpStatusCode.NotModified => "Not Modified",
-            System.Net.HttpStatusCode.MethodNotAllowed => "Method Not Allowed",
-            _ => error.StatusCode.ToString(),
-        };
-        return (status.ToString(System.Globalization.CultureInfo.InvariantCulture), reason);
-    }
-
     /// <summary>
     /// Sends a request the SDK can't make (a header value it rewrites) straight to the cloud, path
     /// style, and returns its status and, for an error, S3's <c>Code</c> and <c>Message</c>.

@@ -233,6 +233,7 @@ public sealed class InMemoryAwsHttpMessageHandler : DelegatingHandler
         var wireRequest = new S3WireRequest(request.Method.Method, host, path, query, headers, body.Memory)
         {
             Region = AwsRequestRegion.FromRequest(request),
+            SecureTransport = !string.Equals(request.RequestUri?.Scheme, "http", StringComparison.OrdinalIgnoreCase),
         };
         var wire = await S3WireProtocol.HandleAsync(wireRequest, _cloud, cancellationToken).ConfigureAwait(false);
         var payload = wire.Body;

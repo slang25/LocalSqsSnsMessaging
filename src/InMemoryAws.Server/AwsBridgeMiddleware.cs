@@ -281,6 +281,7 @@ internal sealed class AwsBridgeMiddleware
         var wireRequest = new S3WireRequest(request.Method, request.Host.Host, path, query, headers, body)
         {
             Region = AwsRequestRegion.FromHttpContext(context),
+            SecureTransport = request.IsHttps,
         };
         var wire = await S3WireProtocol.HandleAsync(wireRequest, cloud, cancellationToken).ConfigureAwait(false);
         var response = context.Response;

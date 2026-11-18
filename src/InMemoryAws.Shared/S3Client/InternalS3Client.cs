@@ -62,7 +62,8 @@ internal sealed partial class InternalS3Client : S3ClientBase
 
     /// <summary>
     /// The bucket a request names, under the store's lock: <c>NoSuchBucket</c> when there is none, and
-    /// refused when the request was signed for another region than the bucket's.
+    /// refused when the request was signed for another region than the bucket's, or when the bucket's
+    /// access settings refuse it (see <see cref="Authorize"/>).
     /// </summary>
     private S3Bucket GetBucket(string? name)
     {
@@ -72,6 +73,7 @@ internal sealed partial class InternalS3Client : S3ClientBase
         }
 
         CheckRegion(bucket);
+        Authorize(bucket);
         return bucket;
     }
 

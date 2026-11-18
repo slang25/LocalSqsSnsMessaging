@@ -16,47 +16,56 @@ internal static partial class S3WireProtocol
         string? best = null;
         var bestLiterals = -1;
         var bestRequired = -1;
-        int literals, required;
+        var bestMissing = int.MaxValue;
+        int literals, required, missing;
         if (request.Method == "DELETE" && request.PathKind == S3PathKind.Object)
         {
             // AbortMultipartUpload
             literals = 0;
             required = (request.HasQuery("uploadId") ? 1 : 0);
-            if (required == 1 && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 1 - required;
+            if (required == 1 && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "AbortMultipartUpload";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // DeleteObject
             literals = 0;
             required = 0;
-            if ((literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if ((literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "DeleteObject";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // DeleteObjectAnnotation
             literals = 1;
             required = (request.HasQuery("annotationName") ? 1 : 0);
-            if (request.HasQuery("annotation") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 1 - required;
+            if (request.HasQuery("annotation") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "DeleteObjectAnnotation";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // DeleteObjectTagging
             literals = 1;
             required = 0;
-            if (request.HasQuery("tagging") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("tagging") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "DeleteObjectTagging";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
         }
@@ -66,41 +75,49 @@ internal static partial class S3WireProtocol
             // CompleteMultipartUpload
             literals = 0;
             required = (request.HasQuery("uploadId") ? 1 : 0);
-            if (required == 1 && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 1 - required;
+            if (required == 1 && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "CompleteMultipartUpload";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // CreateMultipartUpload
             literals = 1;
             required = 0;
-            if (request.HasQuery("uploads") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("uploads") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "CreateMultipartUpload";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // RestoreObject
             literals = 1;
             required = 0;
-            if (request.HasQuery("restore") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("restore") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "RestoreObject";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // SelectObjectContent
             literals = 2;
             required = 0;
-            if (request.HasQuery("select") && request.Query("select-type") == "2" && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("select") && request.Query("select-type") == "2" && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "SelectObjectContent";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
         }
@@ -110,111 +127,133 @@ internal static partial class S3WireProtocol
             // CopyObject
             literals = 0;
             required = (request.Header("x-amz-copy-source") is not null ? 1 : 0);
-            if (required == 1 && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 1 - required;
+            if (required == 1 && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "CopyObject";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutObject
             literals = 0;
             required = 0;
-            if ((literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if ((literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutObject";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutObjectAcl
             literals = 1;
             required = 0;
-            if (request.HasQuery("acl") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("acl") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutObjectAcl";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutObjectAnnotation
             literals = 1;
             required = (request.HasQuery("annotationName") ? 1 : 0);
-            if (request.HasQuery("annotation") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 1 - required;
+            if (request.HasQuery("annotation") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutObjectAnnotation";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutObjectLegalHold
             literals = 1;
             required = 0;
-            if (request.HasQuery("legal-hold") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("legal-hold") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutObjectLegalHold";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutObjectRetention
             literals = 1;
             required = 0;
-            if (request.HasQuery("retention") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("retention") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutObjectRetention";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutObjectTagging
             literals = 1;
             required = 0;
-            if (request.HasQuery("tagging") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("tagging") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutObjectTagging";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // RenameObject
             literals = 1;
             required = (request.Header("x-amz-rename-source") is not null ? 1 : 0);
-            if (request.HasQuery("renameObject") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 1 - required;
+            if (request.HasQuery("renameObject") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "RenameObject";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // UpdateObjectEncryption
             literals = 1;
             required = 0;
-            if (request.HasQuery("encryption") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("encryption") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "UpdateObjectEncryption";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // UploadPart
             literals = 0;
             required = (request.HasQuery("partNumber") ? 1 : 0) + (request.HasQuery("uploadId") ? 1 : 0);
-            if (required == 2 && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 2 - required;
+            if (required == 2 && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "UploadPart";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // UploadPartCopy
             literals = 0;
             required = (request.HasQuery("partNumber") ? 1 : 0) + (request.HasQuery("uploadId") ? 1 : 0) + (request.Header("x-amz-copy-source") is not null ? 1 : 0);
-            if (required == 3 && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 3 - required;
+            if (required == 3 && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "UploadPartCopy";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
         }
@@ -224,251 +263,301 @@ internal static partial class S3WireProtocol
             // CreateBucket
             literals = 0;
             required = 0;
-            if ((literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if ((literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "CreateBucket";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutBucketAbac
             literals = 1;
             required = 0;
-            if (request.HasQuery("abac") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("abac") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutBucketAbac";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutBucketAccelerateConfiguration
             literals = 1;
             required = 0;
-            if (request.HasQuery("accelerate") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("accelerate") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutBucketAccelerateConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutBucketAcl
             literals = 1;
             required = 0;
-            if (request.HasQuery("acl") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("acl") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutBucketAcl";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutBucketAnalyticsConfiguration
             literals = 1;
             required = (request.HasQuery("id") ? 1 : 0);
-            if (request.HasQuery("analytics") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 1 - required;
+            if (request.HasQuery("analytics") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutBucketAnalyticsConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutBucketCors
             literals = 1;
             required = 0;
-            if (request.HasQuery("cors") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("cors") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutBucketCors";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutBucketEncryption
             literals = 1;
             required = 0;
-            if (request.HasQuery("encryption") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("encryption") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutBucketEncryption";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutBucketIntelligentTieringConfiguration
             literals = 1;
             required = (request.HasQuery("id") ? 1 : 0);
-            if (request.HasQuery("intelligent-tiering") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 1 - required;
+            if (request.HasQuery("intelligent-tiering") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutBucketIntelligentTieringConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutBucketInventoryConfiguration
             literals = 1;
             required = (request.HasQuery("id") ? 1 : 0);
-            if (request.HasQuery("inventory") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 1 - required;
+            if (request.HasQuery("inventory") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutBucketInventoryConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutBucketLifecycleConfiguration
             literals = 1;
             required = 0;
-            if (request.HasQuery("lifecycle") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("lifecycle") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutBucketLifecycleConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutBucketLogging
             literals = 1;
             required = 0;
-            if (request.HasQuery("logging") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("logging") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutBucketLogging";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutBucketMetricsConfiguration
             literals = 1;
             required = (request.HasQuery("id") ? 1 : 0);
-            if (request.HasQuery("metrics") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 1 - required;
+            if (request.HasQuery("metrics") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutBucketMetricsConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutBucketNotificationConfiguration
             literals = 1;
             required = 0;
-            if (request.HasQuery("notification") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("notification") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutBucketNotificationConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutBucketOwnershipControls
             literals = 1;
             required = 0;
-            if (request.HasQuery("ownershipControls") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("ownershipControls") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutBucketOwnershipControls";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutBucketPolicy
             literals = 1;
             required = 0;
-            if (request.HasQuery("policy") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("policy") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutBucketPolicy";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutBucketReplication
             literals = 1;
             required = 0;
-            if (request.HasQuery("replication") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("replication") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutBucketReplication";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutBucketRequestPayment
             literals = 1;
             required = 0;
-            if (request.HasQuery("requestPayment") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("requestPayment") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutBucketRequestPayment";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutBucketTagging
             literals = 1;
             required = 0;
-            if (request.HasQuery("tagging") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("tagging") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutBucketTagging";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutBucketVersioning
             literals = 1;
             required = 0;
-            if (request.HasQuery("versioning") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("versioning") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutBucketVersioning";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutBucketWebsite
             literals = 1;
             required = 0;
-            if (request.HasQuery("website") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("website") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutBucketWebsite";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutObjectLockConfiguration
             literals = 1;
             required = 0;
-            if (request.HasQuery("object-lock") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("object-lock") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutObjectLockConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // PutPublicAccessBlock
             literals = 1;
             required = 0;
-            if (request.HasQuery("publicAccessBlock") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("publicAccessBlock") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "PutPublicAccessBlock";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // UpdateBucketMetadataAnnotationTableConfiguration
             literals = 1;
             required = 0;
-            if (request.HasQuery("metadataAnnotationTable") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("metadataAnnotationTable") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "UpdateBucketMetadataAnnotationTableConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // UpdateBucketMetadataInventoryTableConfiguration
             literals = 1;
             required = 0;
-            if (request.HasQuery("metadataInventoryTable") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("metadataInventoryTable") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "UpdateBucketMetadataInventoryTableConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // UpdateBucketMetadataJournalTableConfiguration
             literals = 1;
             required = 0;
-            if (request.HasQuery("metadataJournalTable") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("metadataJournalTable") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "UpdateBucketMetadataJournalTableConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
         }
@@ -478,31 +567,37 @@ internal static partial class S3WireProtocol
             // CreateBucketMetadataConfiguration
             literals = 1;
             required = 0;
-            if (request.HasQuery("metadataConfiguration") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("metadataConfiguration") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "CreateBucketMetadataConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // CreateBucketMetadataTableConfiguration
             literals = 1;
             required = 0;
-            if (request.HasQuery("metadataTable") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("metadataTable") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "CreateBucketMetadataTableConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // DeleteObjects
             literals = 1;
             required = 0;
-            if (request.HasQuery("delete") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("delete") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "DeleteObjects";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
         }
@@ -512,341 +607,409 @@ internal static partial class S3WireProtocol
             // CreateSession
             literals = 1;
             required = 0;
-            if (request.HasQuery("session") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("session") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "CreateSession";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetBucketAbac
             literals = 1;
             required = 0;
-            if (request.HasQuery("abac") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("abac") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetBucketAbac";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetBucketAccelerateConfiguration
             literals = 1;
             required = 0;
-            if (request.HasQuery("accelerate") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("accelerate") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetBucketAccelerateConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetBucketAcl
             literals = 1;
             required = 0;
-            if (request.HasQuery("acl") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("acl") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetBucketAcl";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetBucketAnalyticsConfiguration
             literals = 1;
             required = (request.HasQuery("id") ? 1 : 0);
-            if (request.HasQuery("analytics") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 1 - required;
+            if (request.HasQuery("analytics") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetBucketAnalyticsConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetBucketCors
             literals = 1;
             required = 0;
-            if (request.HasQuery("cors") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("cors") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetBucketCors";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetBucketEncryption
             literals = 1;
             required = 0;
-            if (request.HasQuery("encryption") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("encryption") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetBucketEncryption";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetBucketIntelligentTieringConfiguration
             literals = 1;
             required = (request.HasQuery("id") ? 1 : 0);
-            if (request.HasQuery("intelligent-tiering") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 1 - required;
+            if (request.HasQuery("intelligent-tiering") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetBucketIntelligentTieringConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetBucketInventoryConfiguration
             literals = 1;
             required = (request.HasQuery("id") ? 1 : 0);
-            if (request.HasQuery("inventory") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 1 - required;
+            if (request.HasQuery("inventory") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetBucketInventoryConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetBucketLifecycleConfiguration
             literals = 1;
             required = 0;
-            if (request.HasQuery("lifecycle") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("lifecycle") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetBucketLifecycleConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetBucketLocation
             literals = 1;
             required = 0;
-            if (request.HasQuery("location") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("location") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetBucketLocation";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetBucketLogging
             literals = 1;
             required = 0;
-            if (request.HasQuery("logging") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("logging") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetBucketLogging";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetBucketMetadataConfiguration
             literals = 1;
             required = 0;
-            if (request.HasQuery("metadataConfiguration") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("metadataConfiguration") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetBucketMetadataConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetBucketMetadataTableConfiguration
             literals = 1;
             required = 0;
-            if (request.HasQuery("metadataTable") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("metadataTable") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetBucketMetadataTableConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetBucketMetricsConfiguration
             literals = 1;
             required = (request.HasQuery("id") ? 1 : 0);
-            if (request.HasQuery("metrics") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 1 - required;
+            if (request.HasQuery("metrics") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetBucketMetricsConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetBucketNotificationConfiguration
             literals = 1;
             required = 0;
-            if (request.HasQuery("notification") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("notification") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetBucketNotificationConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetBucketOwnershipControls
             literals = 1;
             required = 0;
-            if (request.HasQuery("ownershipControls") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("ownershipControls") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetBucketOwnershipControls";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetBucketPolicy
             literals = 1;
             required = 0;
-            if (request.HasQuery("policy") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("policy") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetBucketPolicy";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetBucketPolicyStatus
             literals = 1;
             required = 0;
-            if (request.HasQuery("policyStatus") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("policyStatus") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetBucketPolicyStatus";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetBucketReplication
             literals = 1;
             required = 0;
-            if (request.HasQuery("replication") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("replication") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetBucketReplication";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetBucketRequestPayment
             literals = 1;
             required = 0;
-            if (request.HasQuery("requestPayment") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("requestPayment") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetBucketRequestPayment";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetBucketTagging
             literals = 1;
             required = 0;
-            if (request.HasQuery("tagging") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("tagging") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetBucketTagging";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetBucketVersioning
             literals = 1;
             required = 0;
-            if (request.HasQuery("versioning") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("versioning") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetBucketVersioning";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetBucketWebsite
             literals = 1;
             required = 0;
-            if (request.HasQuery("website") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("website") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetBucketWebsite";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetObjectLockConfiguration
             literals = 1;
             required = 0;
-            if (request.HasQuery("object-lock") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("object-lock") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetObjectLockConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetPublicAccessBlock
             literals = 1;
             required = 0;
-            if (request.HasQuery("publicAccessBlock") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("publicAccessBlock") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetPublicAccessBlock";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // ListBucketAnalyticsConfigurations
             literals = 1;
             required = 0;
-            if (request.HasQuery("analytics") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("analytics") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "ListBucketAnalyticsConfigurations";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // ListBucketIntelligentTieringConfigurations
             literals = 1;
             required = 0;
-            if (request.HasQuery("intelligent-tiering") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("intelligent-tiering") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "ListBucketIntelligentTieringConfigurations";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // ListBucketInventoryConfigurations
             literals = 1;
             required = 0;
-            if (request.HasQuery("inventory") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("inventory") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "ListBucketInventoryConfigurations";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // ListBucketMetricsConfigurations
             literals = 1;
             required = 0;
-            if (request.HasQuery("metrics") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("metrics") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "ListBucketMetricsConfigurations";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // ListMultipartUploads
             literals = 1;
             required = 0;
-            if (request.HasQuery("uploads") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("uploads") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "ListMultipartUploads";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // ListObjectVersions
             literals = 1;
             required = 0;
-            if (request.HasQuery("versions") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("versions") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "ListObjectVersions";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // ListObjects
             literals = 0;
             required = 0;
-            if ((literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if ((literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "ListObjects";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // ListObjectsV2
             literals = 1;
             required = 0;
-            if (request.Query("list-type") == "2" && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.Query("list-type") == "2" && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "ListObjectsV2";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
         }
@@ -856,161 +1019,193 @@ internal static partial class S3WireProtocol
             // DeleteBucket
             literals = 0;
             required = 0;
-            if ((literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if ((literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "DeleteBucket";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // DeleteBucketAnalyticsConfiguration
             literals = 1;
             required = (request.HasQuery("id") ? 1 : 0);
-            if (request.HasQuery("analytics") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 1 - required;
+            if (request.HasQuery("analytics") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "DeleteBucketAnalyticsConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // DeleteBucketCors
             literals = 1;
             required = 0;
-            if (request.HasQuery("cors") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("cors") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "DeleteBucketCors";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // DeleteBucketEncryption
             literals = 1;
             required = 0;
-            if (request.HasQuery("encryption") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("encryption") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "DeleteBucketEncryption";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // DeleteBucketIntelligentTieringConfiguration
             literals = 1;
             required = (request.HasQuery("id") ? 1 : 0);
-            if (request.HasQuery("intelligent-tiering") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 1 - required;
+            if (request.HasQuery("intelligent-tiering") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "DeleteBucketIntelligentTieringConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // DeleteBucketInventoryConfiguration
             literals = 1;
             required = (request.HasQuery("id") ? 1 : 0);
-            if (request.HasQuery("inventory") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 1 - required;
+            if (request.HasQuery("inventory") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "DeleteBucketInventoryConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // DeleteBucketLifecycle
             literals = 1;
             required = 0;
-            if (request.HasQuery("lifecycle") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("lifecycle") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "DeleteBucketLifecycle";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // DeleteBucketMetadataConfiguration
             literals = 1;
             required = 0;
-            if (request.HasQuery("metadataConfiguration") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("metadataConfiguration") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "DeleteBucketMetadataConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // DeleteBucketMetadataTableConfiguration
             literals = 1;
             required = 0;
-            if (request.HasQuery("metadataTable") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("metadataTable") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "DeleteBucketMetadataTableConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // DeleteBucketMetricsConfiguration
             literals = 1;
             required = (request.HasQuery("id") ? 1 : 0);
-            if (request.HasQuery("metrics") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 1 - required;
+            if (request.HasQuery("metrics") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "DeleteBucketMetricsConfiguration";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // DeleteBucketOwnershipControls
             literals = 1;
             required = 0;
-            if (request.HasQuery("ownershipControls") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("ownershipControls") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "DeleteBucketOwnershipControls";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // DeleteBucketPolicy
             literals = 1;
             required = 0;
-            if (request.HasQuery("policy") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("policy") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "DeleteBucketPolicy";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // DeleteBucketReplication
             literals = 1;
             required = 0;
-            if (request.HasQuery("replication") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("replication") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "DeleteBucketReplication";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // DeleteBucketTagging
             literals = 1;
             required = 0;
-            if (request.HasQuery("tagging") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("tagging") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "DeleteBucketTagging";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // DeleteBucketWebsite
             literals = 1;
             required = 0;
-            if (request.HasQuery("website") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("website") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "DeleteBucketWebsite";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // DeletePublicAccessBlock
             literals = 1;
             required = 0;
-            if (request.HasQuery("publicAccessBlock") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("publicAccessBlock") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "DeletePublicAccessBlock";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
         }
@@ -1020,101 +1215,121 @@ internal static partial class S3WireProtocol
             // GetObject
             literals = 0;
             required = 0;
-            if ((literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if ((literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetObject";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetObjectAcl
             literals = 1;
             required = 0;
-            if (request.HasQuery("acl") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("acl") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetObjectAcl";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetObjectAnnotation
             literals = 1;
             required = (request.HasQuery("annotationName") ? 1 : 0);
-            if (request.HasQuery("annotation") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 1 - required;
+            if (request.HasQuery("annotation") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetObjectAnnotation";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetObjectAttributes
             literals = 1;
             required = (request.Header("x-amz-object-attributes") is not null ? 1 : 0);
-            if (request.HasQuery("attributes") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 1 - required;
+            if (request.HasQuery("attributes") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetObjectAttributes";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetObjectLegalHold
             literals = 1;
             required = 0;
-            if (request.HasQuery("legal-hold") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("legal-hold") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetObjectLegalHold";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetObjectRetention
             literals = 1;
             required = 0;
-            if (request.HasQuery("retention") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("retention") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetObjectRetention";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetObjectTagging
             literals = 1;
             required = 0;
-            if (request.HasQuery("tagging") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("tagging") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetObjectTagging";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // GetObjectTorrent
             literals = 1;
             required = 0;
-            if (request.HasQuery("torrent") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("torrent") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "GetObjectTorrent";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // ListObjectAnnotations
             literals = 1;
             required = 0;
-            if (request.HasQuery("annotation") && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if (request.HasQuery("annotation") && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "ListObjectAnnotations";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
             // ListParts
             literals = 0;
             required = (request.HasQuery("uploadId") ? 1 : 0);
-            if (required == 1 && (literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 1 - required;
+            if (required == 1 && (literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "ListParts";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
         }
@@ -1124,11 +1339,13 @@ internal static partial class S3WireProtocol
             // HeadBucket
             literals = 0;
             required = 0;
-            if ((literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if ((literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "HeadBucket";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
         }
@@ -1138,11 +1355,13 @@ internal static partial class S3WireProtocol
             // HeadObject
             literals = 0;
             required = 0;
-            if ((literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if ((literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "HeadObject";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
         }
@@ -1152,11 +1371,13 @@ internal static partial class S3WireProtocol
             // ListBuckets
             literals = 0;
             required = 0;
-            if ((literals > bestLiterals || (literals == bestLiterals && required > bestRequired)))
+            missing = 0 - required;
+            if ((literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing)))))
             {
                 best = "ListBuckets";
                 bestLiterals = literals;
                 bestRequired = required;
+                bestMissing = missing;
             }
 
         }

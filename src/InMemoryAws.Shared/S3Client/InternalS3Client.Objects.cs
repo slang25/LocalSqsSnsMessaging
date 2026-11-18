@@ -53,8 +53,10 @@ internal sealed partial class InternalS3Client
                 Tags = tags,
                 OwnerId = OwnerId,
             };
+            ApplyObjectLock(bucket, version, request);
             bucket.Add(version);
             OnObjectWritten(bucket, version, "ObjectCreated:Put");
+            ReplicateWrite(bucket, version);
             var output = new PutObjectOutput
             {
                 ETag = version.ETag,
@@ -111,7 +113,7 @@ internal sealed partial class InternalS3Client
         {
             var bucket = GetBucket(request.Bucket);
             var key = CheckKey(request.Key);
-            CheckDeleteConditions(bucket, key, request);
+            CheckDeleteIfMatch(bucket, key, request.IfMatch);
             var result = DeleteOne(bucket, key, request.VersionId, request.BypassGovernanceRetention == true);
             return Task.FromResult(new DeleteObjectOutput
             {
@@ -164,6 +166,7 @@ internal sealed partial class InternalS3Client
         };
         bucket.Add(marker);
         OnObjectRemoved(bucket, marker, "ObjectRemoved:DeleteMarkerCreated");
+        ReplicateDeleteMarker(bucket, marker);
         return new DeleteResult(true, marker.VersionId);
     }
 
@@ -194,6 +197,7 @@ internal sealed partial class InternalS3Client
                 try
                 {
                     var key = item.Key ?? throw S3Errors.MalformedXml();
+                    CheckDeleteConditions(bucket, key, item);
                     var result = DeleteOne(bucket, key, item.VersionId, request.BypassGovernanceRetention == true);
                     if (request.Delete!.Quiet != true)
                     {
@@ -281,8 +285,10 @@ internal sealed partial class InternalS3Client
                 Tags = replaceTags ? ParseTagHeader(request.Tagging) : [.. source.Tags.Select(t => new Tag { Key = t.Key, Value = t.Value })],
                 OwnerId = OwnerId,
             };
+            ApplyObjectLock(bucket, version, request);
             bucket.Add(version);
             OnObjectWritten(bucket, version, "ObjectCreated:Copy");
+            ReplicateWrite(bucket, version);
             var result = new CopyObjectResult { ETag = version.ETag, LastModified = version.LastModified, ChecksumType = version.ChecksumType };
             SetChecksum(result, version.ChecksumAlgorithm, version.Checksum);
             return Task.FromResult(new CopyObjectOutput
@@ -296,6 +302,12 @@ internal sealed partial class InternalS3Client
             });
         }
     }
+
+    /// <summary>
+    /// Applies a write's Object Lock headers (or the bucket's default retention) to the new version
+    /// before it is stored; refuses lock headers a bucket without Object Lock can't take.
+    /// </summary>
+    partial void ApplyObjectLock(S3Bucket bucket, S3ObjectVersion version, IS3ObjectLockMembers request);
 
     /// <summary>Called under the store's lock after an object version is written (notifications hook in here).</summary>
     partial void OnObjectWritten(S3Bucket bucket, S3ObjectVersion version, string eventName);
@@ -422,6 +434,7 @@ internal sealed partial class InternalS3Client
         output.Metadata = version.Metadata.Count == 0 ? null : new Dictionary<string, string>(version.Metadata, StringComparer.Ordinal);
         output.StorageClass = version.StorageClass == "STANDARD" ? null : version.StorageClass;
         output.TagCount = version.Tags.Count == 0 ? null : version.Tags.Count;
+        output.ReplicationStatus = version.ReplicationStatus;
         if (request.ChecksumMode == "ENABLED" && version.Checksum is not null && !partial)
         {
             SetChecksum(output, version.ChecksumAlgorithm, version.Checksum);

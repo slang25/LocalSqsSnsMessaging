@@ -77,6 +77,9 @@ internal sealed class S3WireRequest
     /// <summary>The region the request was signed for or sent to, when it names one.</summary>
     public string? Region { get; init; }
 
+    /// <summary>Whether the request came over TLS (<c>aws:SecureTransport</c>); a plain-HTTP request did not.</summary>
+    public bool SecureTransport { get; init; } = true;
+
     /// <summary>The operation the router chose; null before routing, or when none matches.</summary>
     public string? Operation { get; set; }
 
