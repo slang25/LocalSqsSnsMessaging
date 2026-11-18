@@ -248,3 +248,37 @@ public static partial class S3Fidelity
         }
     }
 }
+
+/// <summary>The s3x checks' shared steps.</summary>
+public static partial class S3Fidelity
+{
+    /// <summary>The s3x checks' <c>_directory_bucket(ctx, s3, prefix)</c>: a directory bucket in the region's first S3 Express zone that takes one.</summary>
+    public static async Task<string> DirectoryBucket(FidelityContext ctx, IAmazonS3 s3, string prefix)
+    {
+        ArgumentNullException.ThrowIfNull(ctx);
+        if (!ExpressZoneIds.TryGetValue(ctx.Region, out var zones))
+        {
+            throw Fail($"S3 Express One Zone AZ IDs not known for region {Py.Repr(ctx.Region)}");
+        }
+
+        return (await CreateDirectoryBucket(ctx, s3, FidelityContext.UniqueName(prefix), zones)).Bucket;
+    }
+
+    /// <summary><c>sorted(o["Key"] for o in resp.get("Contents", []))</c>.</summary>
+    public static List<string> SortedKeys(ListObjectsV2Response response)
+    {
+        ArgumentNullException.ThrowIfNull(response);
+        return [.. (response.S3Objects ?? []).Select(o => o.Key).Order(StringComparer.Ordinal)];
+    }
+
+    /// <summary><c>sorted(p["Prefix"] for p in resp.get("CommonPrefixes", []))</c>.</summary>
+    public static List<string> SortedPrefixes(ListObjectsV2Response response)
+    {
+        ArgumentNullException.ThrowIfNull(response);
+        return [.. (response.CommonPrefixes ?? []).Order(StringComparer.Ordinal)];
+    }
+
+    /// <summary><c>repr()</c> of a (code, status, message) triple.</summary>
+    public static string Repr((string? Code, int Status, string? Message) error) =>
+        $"({Py.Repr(error.Code)}, {error.Status}, {Py.Repr(error.Message)})";
+}

@@ -373,7 +373,10 @@ public sealed class FidelityContext : IAsyncDisposable
         }
 
         AWSCredentials credentials = unsigned ? new AnonymousAWSCredentials() : new BasicAWSCredentials(accessKey, "test");
+        var sessions = new VirtualTimeS3ExpressSessions(Time);
+        config.S3ExpressCredentialProvider = sessions;
         var client = new AmazonS3Client(credentials, config);
+        sessions.Client = client;
         _s3Clients[key] = client;
         return client;
     }
@@ -755,6 +758,47 @@ public sealed class FidelityContext : IAsyncDisposable
     /// <see cref="RequestLatencyHandler"/> for its service. The SDK's process-wide HttpClient cache
     /// is bypassed: it would hand one check's clients another check's handler, cloud and clock.
     /// </summary>
+    /// <summary>
+    /// The S3 Express session cache of a check's S3 clients: mints a session with CreateSession for each
+    /// directory bucket and reuses it until a minute before it expires, on the check's virtual clock (the
+    /// SDK's own cache reads the real one, so a check that waits out a session's five minutes would sign
+    /// with an expired token, where botocore, on AWS's clock, mints a new one).
+    /// </summary>
+    private sealed class VirtualTimeS3ExpressSessions(TimeProvider time) : IS3ExpressCredentialProvider
+    {
+        private readonly Dictionary<string, Amazon.S3.Model.SessionCredentials> _sessions = new(StringComparer.Ordinal);
+        private readonly SemaphoreSlim _gate = new(1, 1);
+
+        public AmazonS3Client? Client { get; set; }
+
+        public Amazon.S3.Model.SessionCredentials ResolveSessionCredentials(string bucketName) =>
+            ResolveSessionCredentialsAsync(bucketName).GetAwaiter().GetResult();
+
+        public async Task<Amazon.S3.Model.SessionCredentials> ResolveSessionCredentialsAsync(string bucketName, CancellationToken cancellationToken = default)
+        {
+            await _gate.WaitAsync(cancellationToken);
+            try
+            {
+                var now = time.GetUtcNow().UtcDateTime;
+                if (_sessions.TryGetValue(bucketName, out var cached) && cached.Expiration is { } expiration
+                    && expiration.ToUniversalTime() - TimeSpan.FromMinutes(1) > now)
+                {
+                    return cached;
+                }
+
+                var session = await Client!.CreateSessionAsync(new Amazon.S3.Model.CreateSessionRequest { BucketName = bucketName }, cancellationToken);
+                _sessions[bucketName] = session.Credentials;
+                return session.Credentials;
+            }
+            finally
+            {
+                _gate.Release();
+            }
+        }
+
+        public void Dispose() => _gate.Dispose();
+    }
+
     private sealed class VirtualTimeHttpClientFactory(RequestLatencyHandler handler) : HttpClientFactory
     {
         public override HttpClient CreateHttpClient(IClientConfig clientConfig) => new(handler, disposeHandler: false);
