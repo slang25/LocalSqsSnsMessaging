@@ -23,6 +23,11 @@ internal static partial class S3WireProtocol
     /// </summary>
     public static async ValueTask<S3WireResponse> HandleAsync(S3WireRequest request, InMemoryAwsCloud cloud, CancellationToken cancellationToken)
     {
+        if (InternalS3Client.ServeWebsite(request, cloud) is { } website)
+        {
+            return website;
+        }
+
         var response = new S3WireResponse();
         var requestId = NewRequestId();
         string? operation = null;

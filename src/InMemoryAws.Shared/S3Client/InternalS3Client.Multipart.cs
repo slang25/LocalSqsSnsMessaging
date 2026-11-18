@@ -283,6 +283,7 @@ internal sealed partial class InternalS3Client
             bucket.CompletedUploads.Add(upload.UploadId);
             bucket.Add(version);
             OnObjectWritten(bucket, version, "ObjectCreated:CompleteMultipartUpload");
+            ReplicateWrite(bucket, version);
             var output = new CompleteMultipartUploadOutput
             {
                 Location = $"https://{bucket.Name}.s3.{bucket.Region}.amazonaws.com/{Uri.EscapeDataString(key).Replace("%2F", "/", StringComparison.Ordinal)}",
