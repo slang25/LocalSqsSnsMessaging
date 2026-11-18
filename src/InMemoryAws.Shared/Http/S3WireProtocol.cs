@@ -50,7 +50,7 @@ internal static partial class S3WireProtocol
 #if NET
             activity = WireTracing.Start("S3", operation);
 #endif
-            var client = new InternalS3Client(cloud, request.Region) { Request = request };
+            var client = new InternalS3Client(cloud, request.Region) { Request = request, RequestId = requestId };
             await DispatchAsync(operation, request, client, response, cancellationToken).ConfigureAwait(false);
 
             // A part or byte range of an object is Partial Content.
