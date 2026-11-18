@@ -40,7 +40,65 @@ internal sealed partial class InternalS3Client
 
         if (given != version.SseCustomerKeyMd5)
         {
-            throw S3Errors.AccessDenied("Access Denied");
+            throw S3Errors.AccessDenied("Requests specifying Server Side Encryption with Customer provided keys must provide the correct secret key.");
+        }
+    }
+
+    /// <summary>
+    /// Copying from an SSE-C object (CopyObject, UploadPartCopy): the request must send the source's key
+    /// as the <c>x-amz-copy-source-server-side-encryption-customer-*</c> headers, and it must be the one
+    /// the source was written with.
+    /// </summary>
+    private static void CheckCopySourceSseCustomerKey(S3ObjectVersion source, Http.S3WireRequest request)
+    {
+        var given = SseCustomerKeyMd5(
+            request.Header("x-amz-copy-source-server-side-encryption-customer-algorithm"),
+            request.Header("x-amz-copy-source-server-side-encryption-customer-key"),
+            request.Header("x-amz-copy-source-server-side-encryption-customer-key-MD5"));
+        if (source.SseCustomerKeyMd5 is null)
+        {
+            if (given is not null)
+            {
+                throw S3Errors.InvalidRequest("The encryption parameters are not applicable to this object.");
+            }
+
+            return;
+        }
+
+        if (given is null)
+        {
+            throw S3Errors.InvalidRequest("The object was stored using a form of Server Side Encryption. The correct parameters must be provided to retrieve the object.");
+        }
+
+        if (given != source.SseCustomerKeyMd5)
+        {
+            throw S3Errors.InvalidRequest("The provided encryption parameters did not match the ones used originally.");
+        }
+    }
+
+    /// <summary>
+    /// A part of an upload initiated with SSE-C (UploadPart, UploadPartCopy) must send the key the upload
+    /// was initiated with.
+    /// </summary>
+    private static void CheckUploadSseCustomerKey(S3MultipartUpload upload, Http.S3WireRequest request)
+    {
+        if (upload.SseCustomerKeyMd5 is null)
+        {
+            return;
+        }
+
+        var given = SseCustomerKeyMd5(
+            request.Header("x-amz-server-side-encryption-customer-algorithm"),
+            request.Header("x-amz-server-side-encryption-customer-key"),
+            request.Header("x-amz-server-side-encryption-customer-key-MD5"));
+        if (given is null)
+        {
+            throw S3Errors.InvalidRequest("The multipart upload initiate requested encryption. Subsequent part requests must include the appropriate encryption parameters.");
+        }
+
+        if (given != upload.SseCustomerKeyMd5)
+        {
+            throw S3Errors.InvalidRequest("The provided encryption parameters did not match the ones used originally.");
         }
     }
 
