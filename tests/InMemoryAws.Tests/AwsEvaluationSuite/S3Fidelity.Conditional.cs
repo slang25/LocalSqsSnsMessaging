@@ -94,6 +94,18 @@ public static partial class S3Fidelity
         return (await s3.CompleteMultipartUploadAsync(new CompleteMultipartUploadRequest { BucketName = bucket, Key = key, UploadId = uploadId, PartETags = done })).ETag;
     }
 
+    /// <summary>
+    /// <c>_second_region(ctx)</c>: the first region, sorted, other than the check's that the account
+    /// can use without opting in.
+    /// </summary>
+    public static string SecondRegion(FidelityContext ctx)
+    {
+        ArgumentNullException.ThrowIfNull(ctx);
+        var usable = DefaultEnabledRegions.Where(r => r != ctx.Region).Order(StringComparer.Ordinal).ToList();
+        FidelityAssert.Ensure(usable.Count > 0, $"describe_regions offered no enabled region other than {Py.Repr(ctx.Region)}");
+        return usable[0];
+    }
+
     /// <summary><c>hashlib.sha256(data).hexdigest()</c>.</summary>
     public static string Sha256Hex(byte[] data) => Convert.ToHexStringLower(SHA256.HashData(data));
 
@@ -138,6 +150,25 @@ public static partial class S3Fidelity
 
             keyMarker = page.NextKeyMarker;
             versionMarker = page.NextVersionIdMarker;
+        }
+    }
+
+    /// <summary><c>_listed_parts</c>: <c>(PartNumber, ChecksumSHA256)</c> of every part, every page.</summary>
+    public static async Task<List<(int, string?)>> ListedPartsSha256(IAmazonS3 s3, string bucket, string key, string uploadId)
+    {
+        ArgumentNullException.ThrowIfNull(s3);
+        var parts = new List<(int, string?)>();
+        int? marker = null;
+        while (true)
+        {
+            var page = await s3.ListPartsAsync(new ListPartsRequest { BucketName = bucket, Key = key, UploadId = uploadId, PartNumberMarker = marker?.ToString(System.Globalization.CultureInfo.InvariantCulture) });
+            parts.AddRange((page.Parts ?? []).Select(p => (p.PartNumber ?? 0, (string?)p.ChecksumSHA256)));
+            if (page.IsTruncated != true)
+            {
+                return parts;
+            }
+
+            marker = page.NextPartNumberMarker;
         }
     }
 }

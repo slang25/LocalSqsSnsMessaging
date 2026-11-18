@@ -65,7 +65,7 @@ public sealed class DeepS3ImmutabilityUploadPartWrongSha256RejectedSlotStaysEmpt
         Ensure(message == want, $"expected {Py.Repr(want)}, got {Py.Repr(message)}");
 
         // Effect absent: the refused part never occupied slot 2.
-        var listed = await ListedParts(s3, bucket, key, uploadId);
+        var listed = await S3Fidelity.ListedPartsSha256(s3, bucket, key, uploadId);
         Ensure(listed.SequenceEqual([(1, S3Fidelity.Sha256B64(part1))]), $"after the rejected part 2, ListParts shows {Py.Repr(listed.Select(p => p.ToString()).ToList())}; want only part 1");
 
         // Positive control: the same slot accepts the true digest.
@@ -78,7 +78,7 @@ public sealed class DeepS3ImmutabilityUploadPartWrongSha256RejectedSlotStaysEmpt
             InputStream = new MemoryStream(Part2),
             ChecksumSHA256 = S3Fidelity.Sha256B64(Part2),
         });
-        listed = await ListedParts(s3, bucket, key, uploadId);
+        listed = await S3Fidelity.ListedPartsSha256(s3, bucket, key, uploadId);
         Ensure(
             listed.SequenceEqual([(1, S3Fidelity.Sha256B64(part1)), (2, S3Fidelity.Sha256B64(Part2))]),
             $"after the corrected part 2, ListParts shows {Py.Repr(listed.Select(p => p.ToString()).ToList())}; want parts 1 and 2 with true digests");
@@ -98,23 +98,5 @@ public sealed class DeepS3ImmutabilityUploadPartWrongSha256RejectedSlotStaysEmpt
         Ensure(
             body.AsSpan().SequenceEqual([.. part1, .. Part2]),
             $"the completed object is {body.Length} bytes and differs from part1+part2 ({part1.Length + Part2.Length} bytes) — the refused part must contribute nothing");
-    }
-
-    /// <summary><c>_listed_parts</c>: <c>(PartNumber, ChecksumSHA256)</c> of every part, every page.</summary>
-    private static async Task<List<(int, string?)>> ListedParts(IAmazonS3 s3, string bucket, string key, string uploadId)
-    {
-        var parts = new List<(int, string?)>();
-        int? marker = null;
-        while (true)
-        {
-            var page = await s3.ListPartsAsync(new ListPartsRequest { BucketName = bucket, Key = key, UploadId = uploadId, PartNumberMarker = marker?.ToString(System.Globalization.CultureInfo.InvariantCulture) });
-            parts.AddRange((page.Parts ?? []).Select(p => (p.PartNumber ?? 0, (string?)p.ChecksumSHA256)));
-            if (page.IsTruncated != true)
-            {
-                return parts;
-            }
-
-            marker = page.NextPartNumberMarker;
-        }
     }
 }
