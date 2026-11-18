@@ -339,15 +339,15 @@ internal sealed partial class InternalS3Client
     }
 
     /// <summary>
-    /// Aborts an upload and drops its parts. An upload completed a moment ago is answered as aborted;
-    /// any other unknown upload is <c>NoSuchUpload</c>.
+    /// Aborts an upload and drops its parts. An upload completed or aborted before is answered as
+    /// aborted again; any other unknown upload is <c>NoSuchUpload</c>.
     /// </summary>
     public override Task<AbortMultipartUploadOutput> AbortMultipartUploadAsync(AbortMultipartUploadRequest request, CancellationToken cancellationToken)
     {
         lock (Store.Gate)
         {
             var bucket = GetBucket(request.Bucket);
-            if (request.UploadId is { } uploadId && bucket.CompletedUploads.Contains(uploadId))
+            if (request.UploadId is { } uploadId && (bucket.CompletedUploads.Contains(uploadId) || bucket.AbortedUploads.Contains(uploadId)))
             {
                 return Task.FromResult(new AbortMultipartUploadOutput());
             }
@@ -359,6 +359,7 @@ internal sealed partial class InternalS3Client
             }
 
             bucket.Uploads.Remove(upload.UploadId);
+            bucket.AbortedUploads.Add(upload.UploadId);
             return Task.FromResult(new AbortMultipartUploadOutput());
         }
     }
