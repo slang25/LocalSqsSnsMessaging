@@ -25,7 +25,10 @@ public sealed class OpContractGetBucketPolicy
         var bucket = await S3Fidelity.CreateBucket(ctx, "sim2real-behav-");
 
         // --- error boundary first: fresh bucket has no policy ---
-        var code = await ClientError(() => s3.GetBucketPolicyAsync(new GetBucketPolicyRequest { BucketName = bucket }));
+        // The .NET SDK answers GetBucketPolicy's NoSuchBucketPolicy as an empty success; read the
+        // refusal botocore surfaces off the wire.
+        var raw = await S3Fidelity.RawError(ctx, "GET", $"{bucket}?policy", "expected a ClientError, but the call SUCCEEDED");
+        var code = (raw.Code, raw.Message);
         Ensure(code == ("NoSuchBucketPolicy", "The bucket policy does not exist"), $"expected NoSuchBucketPolicy, got {code}");
 
         // --- success path: attach a policy, read it back verbatim ---
