@@ -275,6 +275,12 @@ public sealed class InMemoryAwsCloud
     internal ConcurrentDictionary<string, SqsMoveTask> MoveTasks { get; } = [];
 
     /// <summary>
+    /// The cloud's S3 buckets. Bucket names are global, so the store is cloud-wide; each bucket
+    /// records the region it was created in.
+    /// </summary>
+    internal S3.S3Store S3 { get; } = new();
+
+    /// <summary>
     /// Records an API operation if usage tracking is enabled.
     /// </summary>
     /// <param name="service">The AWS service name (e.g., "sqs" or "sns").</param>

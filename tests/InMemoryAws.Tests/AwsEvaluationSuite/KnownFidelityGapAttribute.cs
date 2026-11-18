@@ -33,6 +33,24 @@ public enum FidelityGap
 
     /// <summary>A one-off DynamoDB difference: a message's wording, the order of checks, an edge case.</summary>
     DynamoDbDetail,
+
+    /// <summary>S3 requests are not authenticated: SigV4 signatures, presigned URLs' signatures and clock skew are not checked.</summary>
+    S3Authentication,
+
+    /// <summary>
+    /// S3 access control the library doesn't enforce: an ACL, a bucket policy statement or a Block
+    /// Public Access setting that would refuse (or admit) a caller.
+    /// </summary>
+    S3AccessControl,
+
+    /// <summary>
+    /// Work S3 does in the background after a request returns (lifecycle transitions and expiry,
+    /// replication, restores, inventory and log delivery), which the library doesn't run.
+    /// </summary>
+    S3BackgroundWork,
+
+    /// <summary>A one-off S3 difference: a message's wording, the order of checks, an edge case.</summary>
+    S3Detail,
 }
 
 /// <summary>

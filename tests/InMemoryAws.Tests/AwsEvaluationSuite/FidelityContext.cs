@@ -1,5 +1,6 @@
 using Amazon.DynamoDBv2;
 using Amazon.EventBridge;
+using Amazon.S3;
 using Amazon.Runtime;
 using Amazon.SimpleNotificationService;
 using Amazon.SQS;
@@ -76,6 +77,7 @@ public sealed class FidelityContext : IAsyncDisposable
     private readonly Dictionary<string, AmazonEventBridgeClient> _eventsClients = new(StringComparer.Ordinal);
     private readonly Dictionary<string, AmazonDynamoDBClient> _dynamoClients = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Amazon.DynamoDBStreams.AmazonDynamoDBStreamsClient> _streamsClients = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, AmazonS3Client> _s3Clients = new(StringComparer.Ordinal);
     private readonly FidelityStopwatch _clock;
     private readonly TimeSpan _budget;
     private readonly CancellationTokenSource _stopPump = new();
@@ -85,6 +87,7 @@ public sealed class FidelityContext : IAsyncDisposable
     private readonly RequestLatencyHandler _eventsHandler;
     private readonly RequestLatencyHandler _dynamoHandler;
     private readonly RequestLatencyHandler _streamsHandler;
+    private readonly RequestLatencyHandler _s3Handler;
     private readonly IDisposable _noTraceContext;
     private readonly Dictionary<object, DateTimeOffset> _delayDeadlines = [];
     private readonly System.Diagnostics.Stopwatch _realClock = System.Diagnostics.Stopwatch.StartNew();
@@ -123,6 +126,7 @@ public sealed class FidelityContext : IAsyncDisposable
         _eventsHandler = new RequestLatencyHandler(this, AwsServiceType.EventBridge);
         _dynamoHandler = new RequestLatencyHandler(this, AwsServiceType.DynamoDb);
         _streamsHandler = new RequestLatencyHandler(this, AwsServiceType.DynamoDbStreams);
+        _s3Handler = new RequestLatencyHandler(this, AwsServiceType.S3);
         CurrentContext.Value = this;
 
         // boto3 sends no trace context. The test run's SDK tracing would otherwise add a traceparent
@@ -313,6 +317,55 @@ public sealed class FidelityContext : IAsyncDisposable
         return client;
     }
 
+    /// <summary><c>ctx.client("s3")</c>: the default S3 client, in <see cref="Region"/>.</summary>
+    public AmazonS3Client S3 => S3Client();
+
+    /// <summary>
+    /// <c>ctx.client("s3", region=..., config=Config(...))</c>. Clients are cached per combination, like
+    /// the runner's, and retry as the runner's do (standard mode, 3 attempts). As boto3 does against AWS,
+    /// they address buckets virtual-hosted style (<c>bucket.s3.region.amazonaws.com</c>) unless
+    /// <paramref name="pathStyle"/> is set, and compute and validate checksums when supported.
+    /// </summary>
+    /// <param name="region">The client's region; defaults to <see cref="Region"/>.</param>
+    /// <param name="pathStyle">True for <c>Config(s3={"addressing_style": "path"})</c>.</param>
+    /// <param name="unsigned">True for <c>Config(signature_version=UNSIGNED)</c>.</param>
+    /// <param name="maxAttempts">botocore's <c>max_attempts</c>: attempts in all, retries included.</param>
+    /// <param name="requestChecksumCalculation">botocore's <c>request_checksum_calculation</c>.</param>
+    /// <param name="accessKey">The access key the client signs with.</param>
+    public AmazonS3Client S3Client(
+        string? region = null,
+        bool pathStyle = false,
+        bool unsigned = false,
+        int maxAttempts = 3,
+        RequestChecksumCalculation? requestChecksumCalculation = null,
+        string accessKey = "test")
+    {
+        region ??= Region;
+        var key = $"{region}|{pathStyle}|{unsigned}|{maxAttempts}|{requestChecksumCalculation}|{accessKey}";
+        if (_s3Clients.TryGetValue(key, out var existing))
+        {
+            return existing;
+        }
+
+        var config = new AmazonS3Config
+        {
+            RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(region),
+            ForcePathStyle = pathStyle,
+            RetryMode = RequestRetryMode.Standard,
+            MaxErrorRetry = Math.Max(0, maxAttempts - 1),
+            HttpClientFactory = new VirtualTimeHttpClientFactory(_s3Handler),
+        };
+        if (requestChecksumCalculation is { } calculation)
+        {
+            config.RequestChecksumCalculation = calculation;
+        }
+
+        AWSCredentials credentials = unsigned ? new AnonymousAWSCredentials() : new BasicAWSCredentials(accessKey, "test");
+        var client = new AmazonS3Client(credentials, config);
+        _s3Clients[key] = client;
+        return client;
+    }
+
     /// <summary>
     /// A role ARN for a check that creates an IAM role only to put its ARN on a rule or target. The
     /// cloud models no IAM: it accepts any well-formed role ARN and never assumes it.
@@ -370,6 +423,7 @@ public sealed class FidelityContext : IAsyncDisposable
             AwsServiceType.EventBridge => "events",
             AwsServiceType.DynamoDb => "dynamodb",
             AwsServiceType.DynamoDbStreams => "streams.dynamodb",
+            AwsServiceType.S3 => "s3",
             _ => "sqs",
         };
 #pragma warning disable CA2000 // The HttpClient owns and disposes the handler.
@@ -598,6 +652,11 @@ public sealed class FidelityContext : IAsyncDisposable
             client.Dispose();
         }
 
+        foreach (var client in _s3Clients.Values)
+        {
+            client.Dispose();
+        }
+
         Cloud.HttpClient.Dispose();
         HttpEndpoints.Dispose();
 
@@ -609,6 +668,7 @@ public sealed class FidelityContext : IAsyncDisposable
         _eventsHandler.Dispose();
         _dynamoHandler.Dispose();
         _streamsHandler.Dispose();
+        _s3Handler.Dispose();
         _noTraceContext.Dispose();
     }
 
