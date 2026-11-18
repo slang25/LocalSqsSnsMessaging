@@ -13,6 +13,11 @@ internal sealed partial class InternalS3Client
     /// </summary>
     public override Task<PutObjectOutput> PutObjectAsync(PutObjectRequest request, CancellationToken cancellationToken)
     {
+        if (request.WriteOffsetBytes is not null)
+        {
+            return AppendObject(request);
+        }
+
         var data = request.Body?.ToArray() ?? [];
         VerifyContentMd5(request.ContentMD5, data);
         var (algorithm, checksum) = VerifyChecksums(request, request.ChecksumAlgorithm, data);
@@ -299,6 +304,7 @@ internal sealed partial class InternalS3Client
                 Tags = replaceTags ? ParseTagHeader(request.Tagging) : [.. source.Tags.Select(t => new Tag { Key = t.Key, Value = t.Value })],
                 OwnerId = OwnerId,
             };
+            OnCopying(bucket, source, version, request);
             ApplyObjectLock(bucket, version, request);
             bucket.Add(version);
             OnObjectWritten(bucket, version, "ObjectCreated:Copy");
@@ -322,6 +328,12 @@ internal sealed partial class InternalS3Client
     /// before it is stored; refuses lock headers a bucket without Object Lock can't take.
     /// </summary>
     partial void ApplyObjectLock(S3Bucket bucket, S3ObjectVersion version, IS3ObjectLockMembers request);
+
+    /// <summary>
+    /// Called under the store's lock before a copy is stored: refuses what the destination can't take,
+    /// and carries over what other areas keep on the source (annotations).
+    /// </summary>
+    partial void OnCopying(S3Bucket bucket, S3ObjectVersion source, S3ObjectVersion version, CopyObjectRequest request);
 
     /// <summary>Called under the store's lock after an object version is written (notifications hook in here).</summary>
     partial void OnObjectWritten(S3Bucket bucket, S3ObjectVersion version, string eventName);
@@ -701,12 +713,12 @@ internal sealed partial class InternalS3Client
     /// </summary>
     private string CheckStorageClass(string? storageClass)
     {
+        var directoryBucket = Request?.Bucket?.EndsWith("--x-s3", StringComparison.Ordinal) ?? false;
         if (storageClass is null)
         {
-            return "STANDARD";
+            return directoryBucket ? "EXPRESS_ONEZONE" : "STANDARD";
         }
 
-        var directoryBucket = Request?.Bucket?.EndsWith("--x-s3", StringComparison.Ordinal) ?? false;
         var valid = StorageClasses.Contains(storageClass)
             && (directoryBucket || storageClass is not ("EXPRESS_ONEZONE" or "OUTPOSTS" or "SNOW" or "FSX_OPENZFS" or "FSX_ONTAP"));
         return valid

@@ -117,6 +117,11 @@ public sealed class FidelityContext : IAsyncDisposable
             // through CREATING and DELETING, and the checks see each status and the refusals that
             // go with it. AWS takes seconds to minutes; the checks' waiters poll every second or two.
             DynamoDbTransitionDelay = TimeSpan.FromSeconds(2),
+
+            // As in AWS, an S3 Metadata configuration's tables are CREATING for a while before they
+            // are ACTIVE, and S3 refuses to update them meanwhile. AWS takes about a minute; the
+            // checks poll every few seconds.
+            S3MetadataTableCreationDelay = TimeSpan.FromSeconds(10),
         };
         // The HTTP endpoints the cloud calls (API destinations, OAuth token requests) are the check's
         // own stand-ins (HttpEndpoints); nothing reaches the network.
@@ -366,6 +371,30 @@ public sealed class FidelityContext : IAsyncDisposable
         AWSCredentials credentials = unsigned ? new AnonymousAWSCredentials() : new BasicAWSCredentials(accessKey, "test");
         var client = new AmazonS3Client(credentials, config);
         _s3Clients[key] = client;
+        return client;
+    }
+
+    /// <summary>
+    /// <c>ctx.client("s3", creds=...)</c> with botocore's S3 Express identity cache replaced: a new S3
+    /// client (never cached) that signs every directory bucket request with the session
+    /// <paramref name="sessions"/> resolves, instead of minting its own with CreateSession.
+    /// </summary>
+    public AmazonS3Client S3SessionClient(Amazon.S3.IS3ExpressCredentialProvider sessions, AWSCredentials credentials)
+    {
+        var config = new AmazonS3Config
+        {
+            RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(Region),
+            RetryMode = RequestRetryMode.Standard,
+            MaxErrorRetry = 2,
+            HttpClientFactory = new VirtualTimeHttpClientFactory(_s3Handler),
+            S3ExpressCredentialProvider = sessions,
+        };
+        var client = new AmazonS3Client(credentials, config);
+        OnCleanup(() =>
+        {
+            client.Dispose();
+            return Task.CompletedTask;
+        });
         return client;
     }
 

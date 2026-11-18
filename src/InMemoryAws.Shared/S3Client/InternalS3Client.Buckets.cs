@@ -15,6 +15,11 @@ internal sealed partial class InternalS3Client
     public override Task<CreateBucketOutput> CreateBucketAsync(CreateBucketRequest request, CancellationToken cancellationToken)
     {
         var name = request.Bucket ?? string.Empty;
+        if (request.CreateBucketConfiguration?.Bucket is not null)
+        {
+            return CreateDirectoryBucket(name, request);
+        }
+
         CheckReservedBucketName(name, request);
         if (!S3BucketNames.IsValid(name))
         {
@@ -132,7 +137,7 @@ internal sealed partial class InternalS3Client
         {
             var after = DecodeToken(request.ContinuationToken);
             var buckets = Store.Buckets.Values
-                .Where(b => b.OwnerId == OwnerId)
+                .Where(b => b.OwnerId == OwnerId && !b.IsDirectory)
                 .Where(b => request.Prefix is null || b.Name.StartsWith(request.Prefix, StringComparison.Ordinal))
                 .Where(b => request.BucketRegion is null || b.Region == request.BucketRegion)
                 .OrderBy(b => b.Name, StringComparer.Ordinal)

@@ -257,7 +257,8 @@ internal static class S3Addressing
         var labels = host.Split('.');
         for (var i = 1; i < labels.Length; i++)
         {
-            if (labels[i] == "s3" || labels[i].StartsWith("s3-", StringComparison.Ordinal) || labels[i] == "s3express-control")
+            // S3 Express: a directory bucket's zonal endpoint is bucket.s3express-usw2-az1.us-west-2.amazonaws.com.
+            if (labels[i] == "s3" || labels[i].StartsWith("s3-", StringComparison.Ordinal) || labels[i].StartsWith("s3express-", StringComparison.Ordinal))
             {
                 return labels[i] == "s3express-control" ? null : string.Join(".", labels, 0, i);
             }

@@ -142,6 +142,15 @@ public sealed class InMemoryAwsCloud
     public TimeSpan DynamoDbVectorIndexCreationDelay { get; init; } = TimeSpan.Zero;
 
     /// <summary>
+    /// Gets or initializes how long the tables of an S3 Metadata configuration stay
+    /// <c>CREATING</c> before they are <c>ACTIVE</c> (or <c>FAILED</c>), measured on
+    /// <see cref="TimeProvider"/>. Meanwhile S3 refuses to update the configuration's tables.
+    /// Defaults to zero: the tables are ACTIVE as soon as the request returns. (AWS takes about a
+    /// minute.)
+    /// </summary>
+    public TimeSpan S3MetadataTableCreationDelay { get; init; } = TimeSpan.Zero;
+
+    /// <summary>
     /// Gets or initializes how often DynamoDB time to live looks for expired items in a table
     /// with time to live enabled, measured on <see cref="TimeProvider"/>. An item expires once
     /// its TTL attribute (epoch seconds) is in the past; it is deleted on the next sweep.

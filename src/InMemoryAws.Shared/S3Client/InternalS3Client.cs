@@ -74,8 +74,12 @@ internal sealed partial class InternalS3Client : S3ClientBase
 
         CheckRegion(bucket);
         Authorize(bucket);
+        AuthorizeSession(bucket);
         return bucket;
     }
+
+    /// <summary>Checks the S3 Express session a request to a directory bucket is signed with.</summary>
+    partial void AuthorizeSession(S3Bucket bucket);
 
     /// <summary>
     /// A request signed for another region than the bucket's is refused: S3 answers it as a malformed
