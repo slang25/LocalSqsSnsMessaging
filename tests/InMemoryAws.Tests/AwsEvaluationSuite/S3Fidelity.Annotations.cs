@@ -53,3 +53,32 @@ public static partial class S3Fidelity
         return [.. (listed.Annotations ?? []).Select(a => a.AnnotationName)];
     }
 }
+
+/// <summary>Filling an object's annotations the way the limit checks do.</summary>
+public static partial class S3Fidelity
+{
+    /// <summary>
+    /// <c>ThreadPoolExecutor(max_workers=workers).map(put_one, items)</c>: runs <paramref name="put"/> for
+    /// every item, at most <paramref name="workers"/> at once, and returns each one's result.
+    /// </summary>
+    public static async Task<T[]> RunPool<TItem, T>(FidelityContext ctx, int workers, IEnumerable<TItem> items, Func<TItem, Task<T>> put)
+    {
+        ArgumentNullException.ThrowIfNull(ctx);
+        using var slots = new SemaphoreSlim(workers);
+        using (ctx.Concurrently())
+        {
+            return await Task.WhenAll(items.Select(item => Task.Run(async () =>
+            {
+                await slots.WaitAsync(ctx.CancellationToken);
+                try
+                {
+                    return await put(item);
+                }
+                finally
+                {
+                    slots.Release();
+                }
+            })));
+        }
+    }
+}
