@@ -442,6 +442,7 @@ internal sealed partial class InternalS3Client
             output.ChecksumType = version.ChecksumType;
         }
 
+        output.Expiration = LifecycleExpiration(bucket, version);
         DescribeMore(bucket, version, output);
         return (offset, length);
     }

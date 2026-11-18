@@ -75,6 +75,7 @@ internal sealed partial class InternalS3Client
                 OwnerId = OwnerId,
             };
             OnUploadCreated(bucket, upload, request);
+            ApplyAbortRule(bucket, upload);
             bucket.Uploads.Add(upload.UploadId, upload);
             return Task.FromResult(new CreateMultipartUploadOutput
             {
@@ -88,6 +89,8 @@ internal sealed partial class InternalS3Client
                 SSECustomerKeyMD5 = request.SSECustomerKeyMD5,
                 ChecksumAlgorithm = upload.ChecksumAlgorithm,
                 ChecksumType = upload.ChecksumType,
+                AbortDate = upload.AbortDate,
+                AbortRuleId = upload.AbortRuleId,
             });
         }
     }
@@ -495,6 +498,8 @@ internal sealed partial class InternalS3Client
                 StorageClass = upload.StorageClass,
                 ChecksumAlgorithm = upload.ChecksumAlgorithm,
                 ChecksumType = upload.ChecksumType,
+                AbortDate = upload.AbortDate,
+                AbortRuleId = upload.AbortRuleId,
             };
             foreach (var part in page)
             {
