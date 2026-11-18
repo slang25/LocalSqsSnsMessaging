@@ -1,5 +1,6 @@
 // Translated from behavioral/s3/check_op_contract_put_bucket_lifecycle_configuration.py
 // (https://github.com/aws/aws-emulator-evaluation-suite, commit 4df2823).
+using Amazon.S3;
 using Amazon.S3.Model;
 using static InMemoryAws.Tests.AwsEvaluationSuite.FidelityAssert;
 

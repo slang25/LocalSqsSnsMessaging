@@ -45,7 +45,8 @@ public sealed class OpContractDeleteBucketLifecycle
         Ensure(got.Configuration.Rules[0].Id == "expire-logs", $"expected rule id 'expire-logs', got {Py.Repr(got.Configuration.Rules[0].Id)}");
 
         await s3.DeleteLifecycleConfigurationAsync(new DeleteLifecycleConfigurationRequest { BucketName = bucket });
-        var (code, message) = await ClientError(() => s3.GetLifecycleConfigurationAsync(new GetLifecycleConfigurationRequest { BucketName = bucket }));
+        // The .NET SDK answers GetBucketLifecycleConfiguration's 404 as an empty success; the refusal is read off the wire.
+        var (code, message) = S3Fidelity.Botocore(await S3Fidelity.RawError(ctx, "GET", $"{bucket}?lifecycle", "expected a ClientError, but the call SUCCEEDED"));
         Ensure(code == "NoSuchLifecycleConfiguration", $"expected NoSuchLifecycleConfiguration, got {Py.Repr(code)}");
         Ensure(message == "The lifecycle configuration does not exist", $"unexpected message {Py.Repr(message)}");
 

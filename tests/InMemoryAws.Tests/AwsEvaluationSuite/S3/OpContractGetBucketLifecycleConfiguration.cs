@@ -23,7 +23,8 @@ public sealed class OpContractGetBucketLifecycleConfiguration
         var bucket = await S3Fidelity.CreateBucket(ctx, "sim2real-behav-");
 
         // --- error boundary first: fresh bucket has no lifecycle configuration ---
-        var (code, message) = await ClientError(() => s3.GetLifecycleConfigurationAsync(new GetLifecycleConfigurationRequest { BucketName = bucket }));
+        // The .NET SDK answers GetBucketLifecycleConfiguration's 404 as an empty success; the refusal is read off the wire.
+        var (code, message) = S3Fidelity.Botocore(await S3Fidelity.RawError(ctx, "GET", $"{bucket}?lifecycle", "expected a ClientError, but the call SUCCEEDED"));
         Ensure(code == "NoSuchLifecycleConfiguration", $"expected NoSuchLifecycleConfiguration, got {Py.Repr(code)}");
         Ensure(message == "The lifecycle configuration does not exist", $"unexpected message {Py.Repr(message)}");
 
@@ -53,11 +54,4 @@ public sealed class OpContractGetBucketLifecycleConfiguration
         Ensure(prefix == "tmp/", $"expected Filter.Prefix 'tmp/', got {Py.Repr(prefix)}");
         Ensure(rule.Expiration?.Days == 7, $"expected Expiration.Days 7, got {Py.Repr(rule.Expiration?.Days)}");
     }
-
-    /// <summary>
-    /// The (Error.Code, Error.Message) of fn(); a code-less HEAD error yields the HTTP status. Raises
-    /// AssertionError if fn succeeds.
-    /// </summary>
-    private static Task<(string? Code, string? Message)> ClientError(Func<Task> fn) =>
-        S3Fidelity.ClientError(fn, "expected a ClientError, but the call SUCCEEDED");
 }

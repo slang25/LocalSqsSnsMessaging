@@ -1,5 +1,6 @@
 // Translated from behavioral/s3/check_lifecycle_rule_delete.py
 // (https://github.com/aws/aws-emulator-evaluation-suite, commit 4df2823).
+using Amazon.S3;
 using Amazon.S3.Model;
 using static InMemoryAws.Tests.AwsEvaluationSuite.FidelityAssert;
 
@@ -39,8 +40,8 @@ public sealed class LifecycleRuleDelete
         Ensure(got.Configuration.Rules[0].Id == "tmp-rule", $"expected rule 'tmp-rule' before deletion, got {Py.Repr(got.Configuration.Rules.Select(S3Fidelity.Boto).ToList())}");
 
         await s3.DeleteLifecycleConfigurationAsync(new DeleteLifecycleConfigurationRequest { BucketName = bucket });
-        var err = await FidelityContext.CaptureError(() => s3.GetLifecycleConfigurationAsync(new GetLifecycleConfigurationRequest { BucketName = bucket }))
-            ?? throw Fail("expected a ClientError, but the call succeeded");
+        // The .NET SDK answers GetBucketLifecycleConfiguration's 404 as an empty success; the refusal is read off the wire.
+        var err = await S3Fidelity.RawError(ctx, "GET", $"{bucket}?lifecycle", "expected a ClientError, but the call succeeded");
         Ensure(err.Code == "NoSuchLifecycleConfiguration", $"expected NoSuchLifecycleConfiguration after deletion, got {err}");
         Ensure(err.Message == "The lifecycle configuration does not exist", err.ToString());
     }

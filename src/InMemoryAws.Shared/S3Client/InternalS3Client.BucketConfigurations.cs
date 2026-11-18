@@ -4,10 +4,10 @@ using InMemoryAws.S3.Model;
 namespace InMemoryAws.S3;
 
 /// <summary>
-/// A bucket's named configurations: metrics, analytics, inventory and S3 Intelligent-Tiering. Each
-/// kind is a set keyed by id, kept as sent once it passes S3's checks and answered back; the cloud
-/// publishes no metrics, runs no analysis, writes no inventory reports and moves no objects
-/// between tiers.
+/// A bucket's named configurations: metrics, analytics and S3 Intelligent-Tiering (inventory is in
+/// <c>InternalS3Client.Inventory.cs</c>). Each kind is a set keyed by id, kept as sent once it
+/// passes S3's checks and answered back; the cloud publishes no metrics, runs no analysis and
+/// moves no objects between tiers.
 /// </summary>
 internal sealed partial class InternalS3Client
 {
@@ -88,51 +88,6 @@ internal sealed partial class InternalS3Client
     }
 
     /// <summary>
-    /// Stores an inventory configuration: it must name its destination bucket (by ARN) and format,
-    /// whether it is enabled, which versions it lists and how often.
-    /// </summary>
-    public override Task<PutBucketInventoryConfigurationOutput> PutBucketInventoryConfigurationAsync(PutBucketInventoryConfigurationRequest request, CancellationToken cancellationToken)
-    {
-        var configuration = request.InventoryConfiguration ?? throw S3Errors.MalformedXml();
-        CheckConfigurationIds(request.Id, configuration.Id);
-        var destination = configuration.Destination?.S3BucketDestination;
-        if (destination?.Bucket is null || destination.Format is not ("CSV" or "ORC" or "Parquet") || configuration.IsEnabled is null
-            || configuration.IncludedObjectVersions is not ("All" or "Current") || configuration.Schedule?.Frequency is not ("Daily" or "Weekly"))
-        {
-            throw S3Errors.MalformedXml();
-        }
-
-        if (!destination.Bucket.StartsWith("arn:aws:s3:::", StringComparison.Ordinal))
-        {
-            throw S3Errors.InvalidArgument("Invalid bucket ARN.", "Bucket", destination.Bucket);
-        }
-
-        PutConfiguration(request.Bucket, b => b.InventoryConfigurations, request.Id!, configuration);
-        return Task.FromResult(new PutBucketInventoryConfigurationOutput());
-    }
-
-    public override Task<GetBucketInventoryConfigurationOutput> GetBucketInventoryConfigurationAsync(GetBucketInventoryConfigurationRequest request, CancellationToken cancellationToken) =>
-        Task.FromResult(new GetBucketInventoryConfigurationOutput { InventoryConfiguration = GetConfiguration(request.Bucket, b => b.InventoryConfigurations, request.Id) });
-
-    public override Task<DeleteBucketInventoryConfigurationOutput> DeleteBucketInventoryConfigurationAsync(DeleteBucketInventoryConfigurationRequest request, CancellationToken cancellationToken)
-    {
-        DeleteConfiguration(request.Bucket, b => b.InventoryConfigurations, request.Id);
-        return Task.FromResult(new DeleteBucketInventoryConfigurationOutput());
-    }
-
-    public override Task<ListBucketInventoryConfigurationsOutput> ListBucketInventoryConfigurationsAsync(ListBucketInventoryConfigurationsRequest request, CancellationToken cancellationToken)
-    {
-        var (page, truncated, next) = ListConfigurations(request.Bucket, b => b.InventoryConfigurations, request.ContinuationToken);
-        return Task.FromResult(new ListBucketInventoryConfigurationsOutput
-        {
-            IsTruncated = truncated,
-            ContinuationToken = request.ContinuationToken,
-            NextContinuationToken = next,
-            InventoryConfigurationList = page,
-        });
-    }
-
-    /// <summary>
     /// Stores an S3 Intelligent-Tiering configuration: enabled or disabled, with one or two tierings,
     /// each to a distinct archive tier after its days (90 to 730 for <c>ARCHIVE_ACCESS</c>, 180 to
     /// 730 for <c>DEEP_ARCHIVE_ACCESS</c>).
@@ -160,9 +115,14 @@ internal sealed partial class InternalS3Client
                 throw S3Errors.InvalidArgument("The Intelligent-Tiering configuration contains a duplicate access tier.");
             }
 
-            if (tiering.Days is not { } days || days < low || days > high)
+            if (tiering.Days is not { } days || days < low)
             {
-                throw S3Errors.InvalidArgument($"The days value for {tiering.AccessTier} must be between {low} and {high}.");
+                throw new S3Exception("InvalidAccessTier", $"Days specified in {tiering.AccessTier} tier should not be less than {low}.", HttpStatusCode.BadRequest);
+            }
+
+            if (days > high)
+            {
+                throw new S3Exception("InvalidAccessTier", $"Days specified in {tiering.AccessTier} tier should not be more than {high}.", HttpStatusCode.BadRequest);
             }
         }
 
@@ -280,8 +240,6 @@ internal sealed partial class S3Bucket
     public SortedDictionary<string, MetricsConfiguration> MetricsConfigurations { get; } = new(StringComparer.Ordinal);
 
     public SortedDictionary<string, AnalyticsConfiguration> AnalyticsConfigurations { get; } = new(StringComparer.Ordinal);
-
-    public SortedDictionary<string, InventoryConfiguration> InventoryConfigurations { get; } = new(StringComparer.Ordinal);
 
     public SortedDictionary<string, IntelligentTieringConfiguration> IntelligentTieringConfigurations { get; } = new(StringComparer.Ordinal);
 }

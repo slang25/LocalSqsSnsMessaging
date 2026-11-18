@@ -1,5 +1,6 @@
 // Translated from behavioral/s3/check_lifecycle_abort_incomplete_multipart_invalid_days_rejected.py
 // (https://github.com/aws/aws-emulator-evaluation-suite, commit 4df2823).
+using Amazon.S3;
 using Amazon.S3.Model;
 using static InMemoryAws.Tests.AwsEvaluationSuite.FidelityAssert;
 

@@ -20,7 +20,14 @@ public static partial class S3Fidelity
     {
         ArgumentNullException.ThrowIfNull(s3);
         var (response, error) = await FidelityContext.Capture(() => s3.GetLifecycleConfigurationAsync(new GetLifecycleConfigurationRequest { BucketName = bucket }));
-        return response is null ? (null, error?.Code) : ([.. (response.Configuration?.Rules ?? []).Select(Boto)], null);
+        if (response is null)
+        {
+            return (null, error?.Code);
+        }
+
+        // The .NET SDK answers NoSuchLifecycleConfiguration as a configuration with no rules, which S3
+        // never stores (a configuration holds at least one rule).
+        return response.Configuration?.Rules is { Count: > 0 } rules ? ([.. rules.Select(Boto)], null) : (null, "NoSuchLifecycleConfiguration");
     }
 
     /// <summary>
@@ -223,7 +230,12 @@ public static partial class S3Fidelity
                             a["Prefix"] = p.Prefix;
                             break;
                         case LifecycleTagPredicate t:
-                            ((List<object?>)(a.TryGetValue("Tags", out var tags) ? tags! : a["Tags"] = new List<object?>())).Add(Boto(t.Tag));
+                            if (!a.TryGetValue("Tags", out var tags))
+                            {
+                                a["Tags"] = tags = new List<object?>();
+                            }
+
+                            ((List<object?>)tags!).Add(Boto(t.Tag));
                             break;
                         case LifecycleObjectSizeGreaterThanPredicate g:
                             a["ObjectSizeGreaterThan"] = g.ObjectSizeGreaterThan;
@@ -283,6 +295,60 @@ public static partial class S3Fidelity
             }
 
             dict["And"] = a;
+        }
+
+        return dict;
+    }
+
+    /// <summary>
+    /// A metrics configuration's <c>Filter</c> as boto3 parses it: <c>{"Prefix": ...}</c>,
+    /// <c>{"Tag": {...}}</c>, <c>{"AccessPointArn": ...}</c> or <c>{"And": {"Prefix": ..., "Tags": [...]}}</c>;
+    /// null when the configuration has no filter.
+    /// </summary>
+    public static Dictionary<string, object?>? Boto(MetricsFilter? filter)
+    {
+        if (filter?.MetricsFilterPredicate is not { } predicate)
+        {
+            return null;
+        }
+
+        var dict = new Dictionary<string, object?>(StringComparer.Ordinal);
+        switch (predicate)
+        {
+            case MetricsPrefixPredicate p:
+                dict["Prefix"] = p.Prefix;
+                break;
+            case MetricsTagPredicate t:
+                dict["Tag"] = Boto(t.Tag);
+                break;
+            case MetricsAccessPointArnPredicate a:
+                dict["AccessPointArn"] = a.AccessPointArn;
+                break;
+            case MetricsAndOperator and:
+                var a2 = new Dictionary<string, object?>(StringComparer.Ordinal);
+                foreach (var operand in and.Operands ?? [])
+                {
+                    switch (operand)
+                    {
+                        case MetricsPrefixPredicate p:
+                            a2["Prefix"] = p.Prefix;
+                            break;
+                        case MetricsTagPredicate t:
+                            if (!a2.TryGetValue("Tags", out var tags))
+                            {
+                                a2["Tags"] = tags = new List<object?>();
+                            }
+
+                            ((List<object?>)tags!).Add(Boto(t.Tag));
+                            break;
+                        case MetricsAccessPointArnPredicate ap:
+                            a2["AccessPointArn"] = ap.AccessPointArn;
+                            break;
+                    }
+                }
+
+                dict["And"] = a2;
+                break;
         }
 
         return dict;
