@@ -15,6 +15,7 @@ internal sealed partial class InternalS3Client
         lock (Store.Gate)
         {
             var bucket = GetBucket(request.Bucket);
+            CheckDirectoryListing(bucket, request);
             string? after = request.StartAfter;
             if (request.ContinuationToken is not null)
             {
@@ -22,7 +23,7 @@ internal sealed partial class InternalS3Client
             }
 
             var page = Walk(bucket, request.Prefix, request.Delimiter, after, maxKeys);
-            return Task.FromResult(new ListObjectsV2Output
+            var output = new ListObjectsV2Output
             {
                 Name = bucket.Name,
                 Prefix = Encode(request.Prefix ?? string.Empty, encode),
@@ -36,9 +37,17 @@ internal sealed partial class InternalS3Client
                 StartAfter = request.StartAfter is null ? null : Encode(request.StartAfter, encode),
                 Contents = Contents(page, encode, request.FetchOwner == true),
                 CommonPrefixes = CommonPrefixes(page, encode),
-            });
+            };
+            ListInflightUploads(bucket, request, output);
+            return Task.FromResult(output);
         }
     }
+
+    /// <summary>Refuses a listing a directory bucket can't serve.</summary>
+    partial void CheckDirectoryListing(S3Bucket bucket, ListObjectsV2Request request);
+
+    /// <summary>Adds what a directory bucket lists beyond its objects: the prefixes of uploads in progress.</summary>
+    partial void ListInflightUploads(S3Bucket bucket, ListObjectsV2Request request, ListObjectsV2Output output);
 
     public override Task<ListObjectsOutput> ListObjectsAsync(ListObjectsRequest request, CancellationToken cancellationToken)
     {

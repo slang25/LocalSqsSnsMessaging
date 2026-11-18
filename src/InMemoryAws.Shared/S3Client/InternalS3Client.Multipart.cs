@@ -259,7 +259,7 @@ internal sealed partial class InternalS3Client
                 Key = key,
                 VersionId = NextVersionId(bucket),
                 Data = data,
-                ETag = S3Checksums.MultipartETag(parts.Select(p => p.ETag).ToList()),
+                ETag = bucket.IsDirectory ? DirectoryMultipartETag(data) : S3Checksums.MultipartETag(parts.Select(p => p.ETag).ToList()),
                 LastModified = NowToTheSecond,
                 ContentType = upload.ContentType,
                 ContentEncoding = upload.ContentEncoding,

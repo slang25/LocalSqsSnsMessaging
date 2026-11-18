@@ -160,7 +160,7 @@ internal sealed partial class InternalS3Client
 
         if (action == "PutObject" && operation is "PutObject" or "CopyObject" or "CreateMultipartUpload"
             && request.Header("x-amz-server-side-encryption-customer-algorithm") is not null
-            && bucket.BlocksSseC)
+            && bucket.BlocksSseC && !bucket.IsDirectory)
         {
             throw S3Errors.AccessDenied(
                 $"User: {CallerArn} is not authorized to perform: s3:PutObject on resource: \"{resource}\" " +
