@@ -111,6 +111,7 @@ internal sealed partial class InternalS3Client
         ["PutBucketIntelligentTieringConfiguration"] = "PutIntelligentTieringConfiguration",
         ["DeleteBucketIntelligentTieringConfiguration"] = "PutIntelligentTieringConfiguration",
         ["GetBucketLoggingConfiguration"] = "GetBucketLogging",
+        ["PostObject"] = "PutObject",
     };
 
     /// <summary>The ARN of the caller every signed request acts as: the cloud account's root user.</summary>
@@ -148,6 +149,11 @@ internal sealed partial class InternalS3Client
         if (!OwnerPolicyActions.Contains(action))
         {
             DenyExplicitly(bucket, action, resource);
+        }
+
+        if (operation is "PutObject" or "CopyObject" or "CreateMultipartUpload")
+        {
+            CheckWriteAclHeaders(bucket, request, action, resource);
         }
 
         if (action == "PutObject" && operation is "PutObject" or "CopyObject" or "CreateMultipartUpload"

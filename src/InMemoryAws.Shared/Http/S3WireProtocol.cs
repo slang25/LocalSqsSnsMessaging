@@ -37,10 +37,11 @@ internal static partial class S3WireProtocol
         Exception? failure = null;
         try
         {
+            S3RequestAuthentication.Check(request, cloud);
             S3ChunkedBody.Decode(request);
             operation = IsDirectoryBucketControl(request) && request.PathKind == S3PathKind.Service && request.Method == "GET"
                 ? "ListDirectoryBuckets"
-                : Route(request);
+                : InternalS3Client.IsPostObject(request) ? "PostObject" : Route(request);
             if (operation is null)
             {
                 throw S3Errors.MethodNotAllowed(request.Method, request.PathKind switch
@@ -56,7 +57,14 @@ internal static partial class S3WireProtocol
             activity = WireTracing.Start("S3", operation);
 #endif
             var client = new InternalS3Client(cloud, request.Region) { Request = request };
-            await DispatchAsync(operation, request, client, response, cancellationToken).ConfigureAwait(false);
+            if (operation == "PostObject")
+            {
+                client.PostObject(request, response);
+            }
+            else
+            {
+                await DispatchAsync(operation, request, client, response, cancellationToken).ConfigureAwait(false);
+            }
 
             // A part or byte range of an object is Partial Content.
             if (operation is "GetObject" or "HeadObject" && response.Header("Content-Range") is not null)
