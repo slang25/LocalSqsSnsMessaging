@@ -44,9 +44,9 @@ internal sealed partial class InternalS3Client
                 WebsiteRedirectLocation = request.WebsiteRedirectLocation,
                 Metadata = metadata,
                 StorageClass = storageClass,
-                ServerSideEncryption = request.ServerSideEncryption ?? "AES256",
-                SseKmsKeyId = request.SSEKMSKeyId,
-                BucketKeyEnabled = request.BucketKeyEnabled,
+                ServerSideEncryption = request.ServerSideEncryption ?? DefaultEncryption(bucket)?.SSEAlgorithm ?? "AES256",
+                SseKmsKeyId = request.SSEKMSKeyId ?? (request.ServerSideEncryption is null ? DefaultEncryption(bucket)?.KMSMasterKeyID : null),
+                BucketKeyEnabled = request.BucketKeyEnabled ?? (request.ServerSideEncryption is null ? DefaultBucketKey(bucket) : null),
                 ChecksumAlgorithm = algorithm,
                 Checksum = checksum,
                 ChecksumType = "FULL_OBJECT",
@@ -82,6 +82,7 @@ internal sealed partial class InternalS3Client
         {
             var bucket = GetBucket(request.Bucket);
             var version = ReadableVersion(bucket, request);
+            CheckArchivedRead(version);
             var output = new GetObjectOutput();
             var (offset, length) = Describe(bucket, version, request, output);
             output.Body = new ReadOnlyMemory<byte>(version.Data, (int)offset, (int)length);
@@ -256,6 +257,7 @@ internal sealed partial class InternalS3Client
             var sourceBucket = GetSourceBucket(sourceBucketName);
             var source = SourceVersion(sourceBucket, sourceKey, sourceVersionId);
             CheckCopySourceConditions(source, request.CopySourceIfMatch, request.CopySourceIfNoneMatch, request.CopySourceIfModifiedSince, request.CopySourceIfUnmodifiedSince);
+            CheckArchivedCopySource(source);
             var bucket = GetBucket(request.Bucket);
             var key = CheckKey(request.Key);
             if (bucket == sourceBucket && key == sourceKey && sourceVersionId is null && !replaceMetadata && storageClass is null
@@ -284,9 +286,9 @@ internal sealed partial class InternalS3Client
                 WebsiteRedirectLocation = request.WebsiteRedirectLocation ?? (replaceMetadata ? null : source.WebsiteRedirectLocation),
                 Metadata = metadata,
                 StorageClass = storageClass ?? "STANDARD",
-                ServerSideEncryption = request.ServerSideEncryption ?? "AES256",
-                SseKmsKeyId = request.SSEKMSKeyId,
-                BucketKeyEnabled = request.BucketKeyEnabled,
+                ServerSideEncryption = request.ServerSideEncryption ?? DefaultEncryption(bucket)?.SSEAlgorithm ?? "AES256",
+                SseKmsKeyId = request.SSEKMSKeyId ?? (request.ServerSideEncryption is null ? DefaultEncryption(bucket)?.KMSMasterKeyID : null),
+                BucketKeyEnabled = request.BucketKeyEnabled ?? (request.ServerSideEncryption is null ? DefaultBucketKey(bucket) : null),
                 ChecksumAlgorithm = algorithm,
                 Checksum = S3Checksums.Compute(algorithm, source.Data),
                 ChecksumType = "FULL_OBJECT",
@@ -443,6 +445,7 @@ internal sealed partial class InternalS3Client
         output.StorageClass = version.StorageClass == "STANDARD" ? null : version.StorageClass;
         output.TagCount = version.Tags.Count == 0 ? null : version.Tags.Count;
         output.ReplicationStatus = version.ReplicationStatus;
+        output.Restore = RestoreHeader(version);
         if (request.ChecksumMode == "ENABLED" && version.Checksum is not null && !partial)
         {
             SetChecksum(output, version.ChecksumAlgorithm, version.Checksum);
@@ -687,16 +690,25 @@ internal sealed partial class InternalS3Client
         "DEEP_ARCHIVE", "OUTPOSTS", "GLACIER_IR", "SNOW", "EXPRESS_ONEZONE", "FSX_OPENZFS", "FSX_ONTAP",
     };
 
-    private static string CheckStorageClass(string? storageClass)
+    /// <summary>
+    /// A write's storage class: <c>STANDARD</c> when none is given. A class S3 doesn't have, or one a
+    /// general purpose bucket can't hold (S3 Express One Zone, Outposts, Snow, FSx), is
+    /// <c>InvalidStorageClass</c>.
+    /// </summary>
+    private string CheckStorageClass(string? storageClass)
     {
         if (storageClass is null)
         {
             return "STANDARD";
         }
 
-        return StorageClasses.Contains(storageClass)
+        var directoryBucket = Request?.Bucket?.EndsWith("--x-s3", StringComparison.Ordinal) ?? false;
+        var valid = StorageClasses.Contains(storageClass)
+            && (directoryBucket || storageClass is not ("EXPRESS_ONEZONE" or "OUTPOSTS" or "SNOW" or "FSX_OPENZFS" or "FSX_ONTAP"));
+        return valid
             ? storageClass
-            : throw S3Errors.InvalidArgument("The storage class you specified is not valid", "x-amz-storage-class", storageClass);
+            : throw new S3Exception("InvalidStorageClass", "The storage class you specified is not valid", HttpStatusCode.BadRequest,
+                ("StorageClassRequested", storageClass));
     }
 
     /// <summary><c>Content-MD5</c>: the base64 of 16 bytes (else <c>InvalidDigest</c>) matching the body (else <c>BadDigest</c>).</summary>

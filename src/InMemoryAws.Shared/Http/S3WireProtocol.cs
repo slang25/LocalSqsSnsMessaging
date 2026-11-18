@@ -40,7 +40,7 @@ internal static partial class S3WireProtocol
             S3ChunkedBody.Decode(request);
             operation = IsDirectoryBucketControl(request) && request.PathKind == S3PathKind.Service && request.Method == "GET"
                 ? "ListDirectoryBuckets"
-                : Route(request);
+                : request.Method == "OPTIONS" && request.PathKind != S3PathKind.Service ? "PreflightRequest" : Route(request);
             if (operation is null)
             {
                 throw S3Errors.MethodNotAllowed(request.Method, request.PathKind switch
@@ -56,7 +56,20 @@ internal static partial class S3WireProtocol
             activity = WireTracing.Start("S3", operation);
 #endif
             var client = new InternalS3Client(cloud, request.Region) { Request = request };
-            await DispatchAsync(operation, request, client, response, cancellationToken).ConfigureAwait(false);
+            if (operation == "PreflightRequest")
+            {
+                client.AnswerPreflight(response);
+            }
+            else
+            {
+                await DispatchAsync(operation, request, client, response, cancellationToken).ConfigureAwait(false);
+                InternalS3Client.AddCorsHeaders(request, cloud, response);
+            }
+
+            if (client.ResponseStatus is { } status)
+            {
+                response.Status = status;
+            }
 
             // A part or byte range of an object is Partial Content.
             if (operation is "GetObject" or "HeadObject" && response.Header("Content-Range") is not null)
