@@ -132,6 +132,8 @@ internal sealed partial class InternalS3Client
                 {
                     throw ProtectedByObjectLock();
                 }
+
+                DenyBypass(bucket, version);
             }
 
             version.RetentionMode = retention.Mode;
@@ -236,7 +238,19 @@ internal sealed partial class InternalS3Client
         {
             throw ProtectedByObjectLock();
         }
+
+        if (version.RetentionInForce(Now))
+        {
+            DenyBypass(bucket, version);
+        }
     }
+
+    /// <summary>
+    /// Bypassing a <c>GOVERNANCE</c> retention takes <c>s3:BypassGovernanceRetention</c> on the object:
+    /// a bucket policy that explicitly denies it to the caller refuses the bypass.
+    /// </summary>
+    private void DenyBypass(S3Bucket bucket, S3ObjectVersion version) =>
+        DenyExplicitly(bucket, "BypassGovernanceRetention", $"arn:aws:s3:::{bucket.Name}/{version.Key}");
 
 #pragma warning disable CA1822 // The hook is declared on the instance; other areas may use its state.
     partial void DescribeMore(S3Bucket bucket, S3ObjectVersion version, IS3ObjectHeaders output) =>

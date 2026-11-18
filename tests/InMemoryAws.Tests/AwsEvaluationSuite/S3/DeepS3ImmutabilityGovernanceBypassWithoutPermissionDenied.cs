@@ -23,7 +23,6 @@ public sealed class DeepS3ImmutabilityGovernanceBypassWithoutPermissionDenied
     [Test]
     [DisplayName("s3.deep-s3-immutability-governance-bypass-without-permission-denied")]
     [Timeout(FidelityContext.HangTimeoutMilliseconds)]
-    [KnownFidelityGap(FidelityGap.S3AccessControl, "bucket policies are not enforced: a Deny of s3:BypassGovernanceRetention doesn't stop the caller's bypass")]
     public async Task Run(CancellationToken cancellationToken)
     {
         await using var ctx = new FidelityContext(FidelityContext.BudgetMilliseconds, cancellationToken);

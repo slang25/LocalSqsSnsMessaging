@@ -37,11 +37,11 @@ the port). The *Last changed* column is the last upstream commit to change the c
 | [`sns`](#behavioralsns) | 245 | 207 | 1 | 38 | 0 |
 | [`sns__sqs`](#behavioralsns__sqs) | 12 | 12 | 0 | 0 | 0 |
 | [`sqs`](#behavioralsqs) | 306 | 271 | 3 | 35 | 0 |
-| [`s3`](#behaviorals3) | 481 | 465 | 1 | 16 | 0 |
+| [`s3`](#behaviorals3) | 481 | 465 | 0 | 16 | 0 |
 | [`s3__sqs`](#behaviorals3__sqs) | 16 | 13 | 0 | 3 | 0 |
 | [`s3__sns__sqs`](#behaviorals3__sns__sqs) | 2 | 2 | 0 | 0 | 0 |
 | [`events__s3__sqs`](#behavioralevents__s3__sqs) | 38 | 37 | 2 | 1 | 0 |
-| **Total** | **2302** | **2092** | **23** | **210** | **0** |
+| **Total** | **2302** | **2092** | **22** | **210** | **0** |
 
 ### Not ported, by reason
 
@@ -79,7 +79,6 @@ the port). The *Last changed* column is the last upstream commit to change the c
 | `Other` | 2 |
 | `Validation` | 2 |
 | `DynamoDbDetail` | 1 |
-| `S3AccessControl` | 1 |
 
 ## behavioral/dynamodb
 
@@ -2043,7 +2042,7 @@ the port). The *Last changed* column is the last upstream commit to change the c
 | `s3.deep-s3-immutability-copy-metadata-directive-replace-drops-unrestated` | `4df2823` | ported | `S3/DeepS3ImmutabilityCopyMetadataDirectiveReplaceDropsUnrestated.cs` |
 | `s3.deep-s3-immutability-copy-tagging-directive-independent-of-metadata` | `4df2823` | ported | `S3/DeepS3ImmutabilityCopyTaggingDirectiveIndependentOfMetadata.cs` |
 | `s3.deep-s3-immutability-copy-unknown-tagging-directive-rejected` | `4df2823` | ported | `S3/DeepS3ImmutabilityCopyUnknownTaggingDirectiveRejected.cs` |
-| `s3.deep-s3-immutability-governance-bypass-without-permission-denied` | `4df2823` | known gap: S3AccessControl | `S3/DeepS3ImmutabilityGovernanceBypassWithoutPermissionDenied.cs` |
+| `s3.deep-s3-immutability-governance-bypass-without-permission-denied` | `4df2823` | ported | `S3/DeepS3ImmutabilityGovernanceBypassWithoutPermissionDenied.cs` |
 | `s3.deep-s3-immutability-legal-hold-blocks-bypass-independent-of-retention-rejected` | `4df2823` | ported | `S3/DeepS3ImmutabilityLegalHoldBlocksBypassIndependentOfRetentionRejected.cs` |
 | `s3.deep-s3-immutability-multipart-etag-is-md5-of-part-md5s` | `4df2823` | ported | `S3/DeepS3ImmutabilityMultipartEtagIsMd5OfPartMd5s.cs` |
 | `s3.deep-s3-immutability-requester-pays-anonymous-with-payer-header-rejected` | `4df2823` | ported | `S3/DeepS3ImmutabilityRequesterPaysAnonymousWithPayerHeaderRejected.cs` |
