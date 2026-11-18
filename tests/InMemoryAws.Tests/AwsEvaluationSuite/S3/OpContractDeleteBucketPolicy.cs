@@ -36,7 +36,10 @@ public sealed class OpContractDeleteBucketPolicy
         }
 
         await s3.DeleteBucketPolicyAsync(new DeleteBucketPolicyRequest { BucketName = bucket });
-        var (code, message) = await ClientError(() => s3.GetBucketPolicyAsync(new GetBucketPolicyRequest { BucketName = bucket }));
+        // The .NET SDK answers GetBucketPolicy's NoSuchBucketPolicy as an empty success; read the
+        // refusal botocore surfaces off the wire.
+        var raw = await S3Fidelity.RawError(ctx, "GET", $"{bucket}?policy", "expected a ClientError, but the call SUCCEEDED");
+        var (code, message) = (raw.Code, raw.Message);
         Ensure(code == "NoSuchBucketPolicy", $"expected NoSuchBucketPolicy, got {Py.Repr(code)}");
         Ensure(message == "The bucket policy does not exist", $"unexpected message {Py.Repr(message)}");
 

@@ -636,7 +636,8 @@ internal sealed class RestXmlCodeGenerator
     /// The router: among the operations for the request's method and path, the one that matches
     /// the most query markers (<c>?tagging</c>, <c>?list-type=2</c>); among those, the one with the
     /// most required query parameters and headers present (UploadPart's <c>partNumber</c> and
-    /// <c>uploadId</c>, CopyObject's <c>x-amz-copy-source</c>). An operation with no markers is
+    /// <c>uploadId</c>, CopyObject's <c>x-amz-copy-source</c>); among those, the one missing the fewest
+    /// (so <c>GET ?inventory</c> without an <c>id</c> lists rather than gets). An operation with no markers is
     /// only chosen when all its required query parameters and headers are present.
     /// </summary>
     private void GenerateRouter(StringBuilder code)
@@ -647,7 +648,8 @@ internal sealed class RestXmlCodeGenerator
         code.AppendLine("        string? best = null;");
         code.AppendLine("        var bestLiterals = -1;");
         code.AppendLine("        var bestRequired = -1;");
-        code.AppendLine("        int literals, required;");
+        code.AppendLine("        var bestMissing = int.MaxValue;");
+        code.AppendLine("        int literals, required, missing;");
         foreach (var group in Routes().GroupBy(r => (r.Method, r.Path)))
         {
             code.AppendLine($"        if (request.Method == {Literal(group.Key.Method)} && request.PathKind == S3PathKind.{group.Key.Path})");
@@ -663,6 +665,7 @@ internal sealed class RestXmlCodeGenerator
                 code.AppendLine($"            // {route.Operation}");
                 code.AppendLine($"            literals = {route.Literals.Count};");
                 code.AppendLine($"            required = {(requiredConditions.Count == 0 ? "0" : string.Join(" + ", requiredConditions.Select(c => $"({c} ? 1 : 0)")))};");
+                code.AppendLine($"            missing = {requiredConditions.Count} - required;");
                 var eligible = new List<string>();
                 if (literalConditions.Count > 0)
                 {
@@ -673,12 +676,13 @@ internal sealed class RestXmlCodeGenerator
                     eligible.Add($"required == {requiredConditions.Count}");
                 }
 
-                eligible.Add("(literals > bestLiterals || (literals == bestLiterals && required > bestRequired))");
+                eligible.Add("(literals > bestLiterals || (literals == bestLiterals && (required > bestRequired || (required == bestRequired && missing < bestMissing))))");
                 code.AppendLine($"            if ({string.Join(" && ", eligible)})");
                 code.AppendLine("            {");
                 code.AppendLine($"                best = {Literal(route.Operation)};");
                 code.AppendLine("                bestLiterals = literals;");
                 code.AppendLine("                bestRequired = required;");
+                code.AppendLine("                bestMissing = missing;");
                 code.AppendLine("            }");
                 code.AppendLine();
             }
