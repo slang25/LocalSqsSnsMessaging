@@ -221,7 +221,8 @@ internal static class S3EventMessage
 
     /// <summary>
     /// A key as event records carry it: URL-encoded as a form value, so a space is <c>+</c>, and
-    /// every byte of its UTF-8 but letters, digits, <c>-_.~</c> and <c>/</c> is <c>%XX</c>.
+    /// every byte of its UTF-8 but letters, digits, <c>-_.</c> and <c>/</c> is <c>%XX</c> (S3 escapes
+    /// <c>~</c> too).
     /// </summary>
     public static string EncodeKey(string key)
     {
@@ -229,7 +230,7 @@ internal static class S3EventMessage
         foreach (var b in Encoding.UTF8.GetBytes(key))
         {
             var c = (char)b;
-            if (c is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z') or (>= '0' and <= '9') or '-' or '_' or '.' or '~' or '/')
+            if (c is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z') or (>= '0' and <= '9') or '-' or '_' or '.' or '/')
             {
                 output.Append(c);
             }

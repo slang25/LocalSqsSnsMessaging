@@ -1,6 +1,9 @@
 using System.Net;
 using System.Security;
 using System.Text;
+using System.Text.Json.Nodes;
+using Amazon.SQS;
+using Amazon.SQS.Model;
 using System.Xml.Linq;
 using InMemoryAws.Http;
 
@@ -35,6 +38,62 @@ public static partial class S3Fidelity
         var document = XDocument.Parse(await response.Content.ReadAsStringAsync());
         var fields = document.Root!.Elements().ToDictionary(e => e.Name.LocalName, e => e.Value, StringComparer.Ordinal);
         return new NotificationError(fields, response.StatusCode);
+    }
+
+    /// <summary>
+    /// The policy the notification checks put on a destination: <c>s3.amazonaws.com</c> may perform
+    /// <paramref name="action"/> on <paramref name="resourceArn"/> for the bucket <paramref name="bucket"/>
+    /// (<c>ArnEquals aws:SourceArn</c>), as JSON.
+    /// </summary>
+    public static string NotificationAllowS3Policy(string resourceArn, string bucket, string action = "sqs:SendMessage") =>
+        new JsonObject
+        {
+            ["Version"] = "2012-10-17",
+            ["Statement"] = new JsonArray(new JsonObject
+            {
+                ["Effect"] = "Allow",
+                ["Principal"] = new JsonObject { ["Service"] = "s3.amazonaws.com" },
+                ["Action"] = action,
+                ["Resource"] = resourceArn,
+                ["Condition"] = new JsonObject
+                {
+                    ["ArnEquals"] = new JsonObject { ["aws:SourceArn"] = $"arn:aws:s3:::{bucket}" },
+                },
+            }),
+        }.ToJsonString();
+
+    /// <summary><c>sqs.get_queue_attributes(QueueUrl=url, AttributeNames=["QueueArn"])["Attributes"]["QueueArn"]</c>.</summary>
+    public static async Task<string> NotificationQueueArn(IAmazonSQS sqs, string queueUrl)
+    {
+        ArgumentNullException.ThrowIfNull(sqs);
+        var attributes = await sqs.GetQueueAttributesAsync(new GetQueueAttributesRequest { QueueUrl = queueUrl, AttributeNames = ["QueueArn"] });
+        return attributes.Attributes["QueueArn"];
+    }
+
+    /// <summary>The checks' <c>_delete_queue</c>: deletes a queue, ignoring one already gone.</summary>
+    public static async Task NotificationDeleteQueue(IAmazonSQS sqs, string queueUrl)
+    {
+        ArgumentNullException.ThrowIfNull(sqs);
+        try
+        {
+            await sqs.DeleteQueueAsync(queueUrl);
+        }
+        catch (AmazonSQSException ex) when (ex.ErrorCode is "AWS.SimpleQueueService.NonExistentQueue" or "QueueDoesNotExist")
+        {
+        }
+    }
+
+    /// <summary>The checks' <c>_delete_topic</c>: deletes a topic, ignoring one already gone.</summary>
+    public static async Task NotificationDeleteTopic(Amazon.SimpleNotificationService.IAmazonSimpleNotificationService sns, string topicArn)
+    {
+        ArgumentNullException.ThrowIfNull(sns);
+        try
+        {
+            await sns.DeleteTopicAsync(topicArn);
+        }
+        catch (Amazon.SimpleNotificationService.AmazonSimpleNotificationServiceException ex) when (ex.ErrorCode == "NotFound")
+        {
+        }
     }
 
     /// <summary>A queue configuration's XML: <c>&lt;QueueConfiguration&gt;</c> with its id, ARN, events and prefix/suffix filter rules.</summary>
