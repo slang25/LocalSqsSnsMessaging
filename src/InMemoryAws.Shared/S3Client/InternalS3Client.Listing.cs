@@ -354,8 +354,8 @@ internal sealed partial class InternalS3Client
     };
 
     /// <summary>
-    /// A key or prefix as <c>encoding-type=url</c> answers it: UTF-8, percent-encoded except for
-    /// unreserved characters and <c>/</c>.
+    /// A key or prefix as <c>encoding-type=url</c> answers it: UTF-8, form-encoded (a space is
+    /// <c>+</c>), percent-encoded except for unreserved characters and <c>/</c>.
     /// </summary>
     private static string Encode(string value, bool encode)
     {
@@ -371,6 +371,10 @@ internal sealed partial class InternalS3Client
             if (c is (>= 'A' and <= 'Z') or (>= 'a' and <= 'z') or (>= '0' and <= '9') or '-' or '_' or '.' or '~' or '/')
             {
                 text.Append(c);
+            }
+            else if (c == ' ')
+            {
+                text.Append('+');
             }
             else
             {

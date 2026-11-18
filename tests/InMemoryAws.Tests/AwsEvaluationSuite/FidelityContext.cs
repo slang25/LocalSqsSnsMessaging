@@ -108,6 +108,10 @@ public sealed class FidelityContext : IAsyncDisposable
             // As in AWS, only existing KMS keys work.
             KmsKeyAliases = new HashSet<string>(StringComparer.Ordinal),
 
+            // As in AWS, S3 authenticates requests signed with the checks' credentials (access key
+            // "test", secret "test"): their signatures, request times and presigned URL expiries.
+            SecretAccessKeys = new Dictionary<string, string>(StringComparer.Ordinal) { ["test"] = "test" },
+
             // As in AWS, a vector index UpdateTable adds is CREATING for a while (allocating, then
             // backfilling) before it is ACTIVE. AWS takes minutes; this is short enough for a
             // check's budget and long enough for a check to see each phase.

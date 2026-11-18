@@ -115,6 +115,24 @@ internal sealed partial class InternalS3Client
         return response;
     }
 
+    /// <summary>
+    /// A write's <c>x-amz-website-redirect-location</c> must be a path on the bucket's site (starting
+    /// with <c>/</c>) or an <c>http://</c> or <c>https://</c> URL.
+    /// </summary>
+    private static void CheckWebsiteRedirectLocation(string? location)
+    {
+        if (location is not null
+            && !(location.Length > 0 && location[0] == '/')
+            && !location.StartsWith("http://", StringComparison.Ordinal)
+            && !location.StartsWith("https://", StringComparison.Ordinal))
+        {
+            throw new S3Exception(
+                "InvalidRedirectLocation",
+                "The website redirect location must have a prefix of 'http://' or 'https://' or '/'.",
+                HttpStatusCode.BadRequest);
+        }
+    }
+
     /// <summary>Whether a host is a website endpoint: a label <c>s3-website</c> or <c>s3-website-region</c> after the bucket's.</summary>
     private static bool IsWebsiteHost(string host) =>
         host.Split('.').Skip(1).Any(label => label == "s3-website" || label.StartsWith("s3-website-", StringComparison.Ordinal));
@@ -169,7 +187,16 @@ internal sealed partial class InternalS3Client
         var readable = ReadableAnonymously(bucket, key);
         if (readable && bucket.Current(key) is { IsDeleteMarker: false } version)
         {
-            return version.WebsiteRedirectLocation is { } location ? Redirect(301, location) : ObjectPage(200, version);
+            if (version.WebsiteRedirectLocation is { } location)
+            {
+                return Redirect(301, location);
+            }
+
+            // An SSE-C object needs its key, which an anonymous website request can't send.
+            return version.SseCustomerKeyMd5 is null
+                ? ObjectPage(200, version)
+                : ErrorPage(400, "Bad Request", requestId, hostId, ("Code", "InvalidRequest"),
+                    ("Message", "The object was stored using a form of Server Side Encryption. The correct parameters must be provided to retrieve the object."));
         }
 
 

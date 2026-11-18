@@ -74,6 +74,7 @@ internal sealed partial class InternalS3Client
             {
                 version.Restore = new S3Restore(tier, days, now + RetrievalTime(version.StorageClass, tier));
                 ResponseStatus = 202;
+                NotifyObjectEvent(bucket, version, "ObjectRestore:Post");
             }
             else if (state.Ongoing)
             {

@@ -56,6 +56,20 @@ internal static class S3VersionIds
         return true;
     }
 
+    /// <summary>
+    /// Whether <paramref name="versionId"/> is an id the cloud could have minted: 32 characters that
+    /// decode to 24 bytes whose check value holds. Any other id names no version that ever existed.
+    /// </summary>
+    public static bool CouldBeMinted(string versionId)
+    {
+        if (versionId.Length != 32 || versionId.Any(c => !(char.IsLetterOrDigit(c) && c < 128) && c is not ('.' or '_')))
+        {
+            return false;
+        }
+
+        return IsIntact(versionId);
+    }
+
     /// <summary>Writes the FNV-1a hash of the first 20 bytes of <paramref name="source"/> into the last 4 of <paramref name="target"/>.</summary>
     private static void WriteCheck(byte[] source, byte[] target)
     {
