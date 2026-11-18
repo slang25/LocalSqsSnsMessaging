@@ -15,6 +15,7 @@ internal sealed partial class InternalS3Client
     public override Task<CreateBucketOutput> CreateBucketAsync(CreateBucketRequest request, CancellationToken cancellationToken)
     {
         var name = request.Bucket ?? string.Empty;
+        CheckReservedBucketName(name, request);
         if (!S3BucketNames.IsValid(name))
         {
             throw S3Errors.InvalidBucketName(name);
