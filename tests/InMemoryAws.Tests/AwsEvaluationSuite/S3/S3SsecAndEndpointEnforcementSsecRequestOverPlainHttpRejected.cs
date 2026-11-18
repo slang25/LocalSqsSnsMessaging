@@ -53,7 +53,7 @@ public sealed class S3SsecAndEndpointEnforcementSsecRequestOverPlainHttpRejected
         var getUrl = S3Fidelity.Presign(ctx, "GET", bucket, "ssec.bin", 300, signedHeaders: hdrs, pathStyle: true);
         Ensure(getUrl.StartsWith("https://", StringComparison.Ordinal), $"presigned URL is not https: {Py.Repr(getUrl.Split('?')[0])}");
         (status, _, raw) = await S3Fidelity.Send(ctx, "GET", S3Fidelity.AsHttp(getUrl), hdrs);
-        var (code, message) = S3Fidelity.XmlError(raw);
+        var (code, message) = S3Fidelity.XmlCodeMessage(raw);
         Ensure(
             (status, code, message) == (400, "InvalidArgument", insecureSsec),
             $"SSE-C GET over http:// returned HTTP {status} code {Py.Repr(code)}; expected 400 " +
@@ -68,7 +68,7 @@ public sealed class S3SsecAndEndpointEnforcementSsecRequestOverPlainHttpRejected
         // SSE-C PUT over http:// is refused and writes nothing; its https:// twin writes.
         var putUrl = S3Fidelity.Presign(ctx, "PUT", bucket, "over-http.bin", 300, signedHeaders: hdrs, pathStyle: true);
         (status, _, raw) = await S3Fidelity.Send(ctx, "PUT", S3Fidelity.AsHttp(putUrl), hdrs, "must not land"u8.ToArray());
-        (code, message) = S3Fidelity.XmlError(raw);
+        (code, message) = S3Fidelity.XmlCodeMessage(raw);
         Ensure(
             (status, code, message) == (400, "InvalidArgument", insecureSsec),
             $"SSE-C PUT over http:// returned HTTP {status} code {Py.Repr(code)}; expected 400 " +

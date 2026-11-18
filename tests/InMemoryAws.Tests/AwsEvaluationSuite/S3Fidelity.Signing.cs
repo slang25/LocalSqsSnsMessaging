@@ -196,15 +196,6 @@ public static partial class S3Fidelity
     }
 
     /// <summary>
-    /// The object URL the checks address with <c>ctx.s3_object_url(...)</c>: virtual-hosted, regional.
-    /// </summary>
-    public static string ObjectUrl(FidelityContext ctx, string bucket, string key)
-    {
-        ArgumentNullException.ThrowIfNull(ctx);
-        return $"https://{bucket}.s3.{ctx.Region}.amazonaws.com/{Quote(key)}";
-    }
-
-    /// <summary>
     /// <c>_target(client, bucket, key)</c>: the URL, host and path of a raw path-style request on a
     /// client's regional endpoint.
     /// </summary>
@@ -373,7 +364,7 @@ public static partial class S3Fidelity
     }
 
     /// <summary><c>_xml_error(body)</c>: the (Code, Message) of an S3 XML error body; nulls when it is not one.</summary>
-    public static (string? Code, string? Message) XmlError(byte[] body)
+    public static (string? Code, string? Message) XmlCodeMessage(byte[] body)
     {
         var fields = XmlFields(body);
         return (fields?.GetValueOrDefault("Code"), fields?.GetValueOrDefault("Message"));
@@ -401,5 +392,5 @@ public static partial class S3Fidelity
     }
 
     /// <summary>Python's <c>(code, message) == (expected, ...)</c> on an XML error body.</summary>
-    public static string ReprXmlError(byte[] body) => Repr(XmlError(body));
+    public static string ReprXmlError(byte[] body) => Repr(XmlCodeMessage(body));
 }

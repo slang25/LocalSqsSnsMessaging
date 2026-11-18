@@ -67,7 +67,7 @@ public sealed class PresignedPostExpiredPolicyRejectedAndWritesNothing
             status == 403,
             "POSTing against a policy whose expiration already elapsed was answered " +
             $"{status} with {S3Fidelity.Head(respBody, 300)}; expected 403");
-        var (code, message) = S3Fidelity.XmlError(respBody);
+        var (code, message) = S3Fidelity.XmlCodeMessage(respBody);
         Ensure(code == "AccessDenied", $"the expired-policy POST returned code {Py.Repr(code)}; expected 'AccessDenied': {S3Fidelity.Head(respBody, 400)}");
         const string expectedMessage = "Invalid according to Policy: Policy expired.";
         Ensure(message == expectedMessage, $"the expired-policy POST returned message {Py.Repr(message)}; expected {Py.Repr(expectedMessage)}");

@@ -22,6 +22,7 @@ internal sealed partial class InternalS3Client
         var metadata = request.Metadata ?? new Dictionary<string, string>(StringComparer.Ordinal);
         CheckMetadataSize(metadata);
         var storageClass = CheckStorageClass(request.StorageClass);
+        var sseCustomerKeyMd5 = SseCustomerKeyMd5(request.SSECustomerAlgorithm, request.SSECustomerKey, request.SSECustomerKeyMD5);
 
         lock (Store.Gate)
         {
@@ -44,9 +45,10 @@ internal sealed partial class InternalS3Client
                 WebsiteRedirectLocation = request.WebsiteRedirectLocation,
                 Metadata = metadata,
                 StorageClass = storageClass,
-                ServerSideEncryption = request.ServerSideEncryption ?? "AES256",
-                SseKmsKeyId = request.SSEKMSKeyId,
-                BucketKeyEnabled = request.BucketKeyEnabled,
+                ServerSideEncryption = request.ServerSideEncryption ?? DefaultEncryption(bucket)?.SSEAlgorithm ?? "AES256",
+                SseKmsKeyId = request.SSEKMSKeyId ?? (request.ServerSideEncryption is null ? DefaultEncryption(bucket)?.KMSMasterKeyID : null),
+                BucketKeyEnabled = request.BucketKeyEnabled ?? (request.ServerSideEncryption is null ? DefaultBucketKey(bucket) : null),
+                SseCustomerKeyMd5 = sseCustomerKeyMd5,
                 ChecksumAlgorithm = algorithm,
                 Checksum = checksum,
                 ChecksumType = "FULL_OBJECT",
@@ -60,10 +62,15 @@ internal sealed partial class InternalS3Client
             var output = new PutObjectOutput
             {
                 ETag = version.ETag,
-                VersionId = VersionIdHeader(bucket, version),
-                ServerSideEncryption = version.ServerSideEncryption,
+
+                // A write to a bucket whose versioning is suspended answers no version id, though the
+                // version it wrote is the null one.
+                VersionId = version.VersionId == S3ObjectVersion.NullVersionId ? null : VersionIdHeader(bucket, version),
+                ServerSideEncryption = version.SseCustomerKeyMd5 is null ? version.ServerSideEncryption : null,
                 SSEKMSKeyId = version.SseKmsKeyId,
                 BucketKeyEnabled = version.BucketKeyEnabled,
+                SSECustomerAlgorithm = version.SseCustomerKeyMd5 is null ? null : "AES256",
+                SSECustomerKeyMD5 = version.SseCustomerKeyMd5,
                 ChecksumType = version.ChecksumType,
             };
             SetChecksum(output, version.ChecksumAlgorithm, version.Checksum);
@@ -82,6 +89,7 @@ internal sealed partial class InternalS3Client
         {
             var bucket = GetBucket(request.Bucket);
             var version = ReadableVersion(bucket, request);
+            CheckArchivedRead(version);
             var output = new GetObjectOutput();
             var (offset, length) = Describe(bucket, version, request, output);
             output.Body = new ReadOnlyMemory<byte>(version.Data, (int)offset, (int)length);
@@ -198,6 +206,14 @@ internal sealed partial class InternalS3Client
                 {
                     var key = item.Key ?? throw S3Errors.MalformedXml();
                     CheckDeleteConditions(bucket, key, item);
+
+                    // A version id S3 could never have minted is NoSuchVersion for its key here, where
+                    // GetObject and DeleteObject refuse it as InvalidArgument.
+                    if (item.VersionId is { } versionId && versionId != S3ObjectVersion.NullVersionId && !S3VersionIds.CouldBeMinted(versionId))
+                    {
+                        throw S3Errors.NoSuchVersion(key, versionId);
+                    }
+
                     var result = DeleteOne(bucket, key, item.VersionId, request.BypassGovernanceRetention == true);
                     if (request.Delete!.Quiet != true)
                     {
@@ -248,6 +264,7 @@ internal sealed partial class InternalS3Client
             var sourceBucket = GetSourceBucket(sourceBucketName);
             var source = SourceVersion(sourceBucket, sourceKey, sourceVersionId);
             CheckCopySourceConditions(source, request.CopySourceIfMatch, request.CopySourceIfNoneMatch, request.CopySourceIfModifiedSince, request.CopySourceIfUnmodifiedSince);
+            CheckArchivedCopySource(source);
             var bucket = GetBucket(request.Bucket);
             var key = CheckKey(request.Key);
             if (bucket == sourceBucket && key == sourceKey && sourceVersionId is null && !replaceMetadata && storageClass is null
@@ -276,9 +293,9 @@ internal sealed partial class InternalS3Client
                 WebsiteRedirectLocation = request.WebsiteRedirectLocation ?? (replaceMetadata ? null : source.WebsiteRedirectLocation),
                 Metadata = metadata,
                 StorageClass = storageClass ?? "STANDARD",
-                ServerSideEncryption = request.ServerSideEncryption ?? "AES256",
-                SseKmsKeyId = request.SSEKMSKeyId,
-                BucketKeyEnabled = request.BucketKeyEnabled,
+                ServerSideEncryption = request.ServerSideEncryption ?? DefaultEncryption(bucket)?.SSEAlgorithm ?? "AES256",
+                SseKmsKeyId = request.SSEKMSKeyId ?? (request.ServerSideEncryption is null ? DefaultEncryption(bucket)?.KMSMasterKeyID : null),
+                BucketKeyEnabled = request.BucketKeyEnabled ?? (request.ServerSideEncryption is null ? DefaultBucketKey(bucket) : null),
                 ChecksumAlgorithm = algorithm,
                 Checksum = S3Checksums.Compute(algorithm, source.Data),
                 ChecksumType = "FULL_OBJECT",
@@ -435,6 +452,7 @@ internal sealed partial class InternalS3Client
         output.StorageClass = version.StorageClass == "STANDARD" ? null : version.StorageClass;
         output.TagCount = version.Tags.Count == 0 ? null : version.Tags.Count;
         output.ReplicationStatus = version.ReplicationStatus;
+        output.Restore = RestoreHeader(version);
         if (request.ChecksumMode == "ENABLED" && version.Checksum is not null && !partial)
         {
             SetChecksum(output, version.ChecksumAlgorithm, version.Checksum);
@@ -447,6 +465,7 @@ internal sealed partial class InternalS3Client
             output.ChecksumType = version.ChecksumType;
         }
 
+        output.Expiration = LifecycleExpiration(bucket, version);
         DescribeMore(bucket, version, output);
         return (offset, length);
     }
@@ -678,16 +697,25 @@ internal sealed partial class InternalS3Client
         "DEEP_ARCHIVE", "OUTPOSTS", "GLACIER_IR", "SNOW", "EXPRESS_ONEZONE", "FSX_OPENZFS", "FSX_ONTAP",
     };
 
-    private static string CheckStorageClass(string? storageClass)
+    /// <summary>
+    /// A write's storage class: <c>STANDARD</c> when none is given. A class S3 doesn't have, or one a
+    /// general purpose bucket can't hold (S3 Express One Zone, Outposts, Snow, FSx), is
+    /// <c>InvalidStorageClass</c>.
+    /// </summary>
+    private string CheckStorageClass(string? storageClass)
     {
         if (storageClass is null)
         {
             return "STANDARD";
         }
 
-        return StorageClasses.Contains(storageClass)
+        var directoryBucket = Request?.Bucket?.EndsWith("--x-s3", StringComparison.Ordinal) ?? false;
+        var valid = StorageClasses.Contains(storageClass)
+            && (directoryBucket || storageClass is not ("EXPRESS_ONEZONE" or "OUTPOSTS" or "SNOW" or "FSX_OPENZFS" or "FSX_ONTAP"));
+        return valid
             ? storageClass
-            : throw S3Errors.InvalidArgument("The storage class you specified is not valid", "x-amz-storage-class", storageClass);
+            : throw new S3Exception("InvalidStorageClass", "The storage class you specified is not valid", HttpStatusCode.BadRequest,
+                ("StorageClassRequested", storageClass));
     }
 
     /// <summary><c>Content-MD5</c>: the base64 of 16 bytes (else <c>InvalidDigest</c>) matching the body (else <c>BadDigest</c>).</summary>

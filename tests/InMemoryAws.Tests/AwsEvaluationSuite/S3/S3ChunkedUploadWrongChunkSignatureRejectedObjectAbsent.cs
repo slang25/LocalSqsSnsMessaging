@@ -31,7 +31,7 @@ public sealed class S3ChunkedUploadWrongChunkSignatureRejectedObjectAbsent
             status == 403,
             "a chunked PUT whose chunk-signature does not chain correctly must be refused 403, " +
             $"got {status}: {S3Fidelity.Head(body, 300)}");
-        var (code, message) = S3Fidelity.XmlError(body);
+        var (code, message) = S3Fidelity.XmlCodeMessage(body);
         Ensure(
             code == "SignatureDoesNotMatch",
             $"the wrong-chunk-signature refusal carries code {Py.Repr(code)}, expected SignatureDoesNotMatch: {S3Fidelity.Head(body, 300)}");

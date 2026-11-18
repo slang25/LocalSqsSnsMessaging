@@ -24,7 +24,8 @@ public sealed class OpContractGetBucketMetricsConfiguration
         const string metricsId = "sim2real-metrics";
 
         // --- error boundary first: no configuration exists for this Id yet ---
-        var (code, message) = await ClientError(() => s3.GetBucketMetricsConfigurationAsync(new GetBucketMetricsConfigurationRequest { BucketName = bucket, MetricsId = metricsId }));
+        // The .NET SDK answers GetBucketMetricsConfiguration's 404 as an empty success; the refusal is read off the wire.
+        var (code, message) = S3Fidelity.Botocore(await S3Fidelity.RawError(ctx, "GET", $"{bucket}?metrics&id={metricsId}", "expected a ClientError, but the call SUCCEEDED"));
         Ensure(code == "NoSuchConfiguration", $"expected NoSuchConfiguration, got {Py.Repr(code)}");
         Ensure(message == "The specified configuration does not exist.", $"unexpected message {Py.Repr(message)}");
 
@@ -45,11 +46,4 @@ public sealed class OpContractGetBucketMetricsConfiguration
         var prefix = (cfg.MetricsFilter?.MetricsFilterPredicate as MetricsPrefixPredicate)?.Prefix;
         Ensure(prefix == "billing/", $"expected Prefix 'billing/', got {Py.Repr(prefix)}");
     }
-
-    /// <summary>
-    /// The (Error.Code, Error.Message) of fn(); a code-less HEAD error yields the HTTP status. Raises
-    /// AssertionError if fn succeeds.
-    /// </summary>
-    private static Task<(string? Code, string? Message)> ClientError(Func<Task> fn) =>
-        S3Fidelity.ClientError(fn, "expected a ClientError, but the call SUCCEEDED");
 }

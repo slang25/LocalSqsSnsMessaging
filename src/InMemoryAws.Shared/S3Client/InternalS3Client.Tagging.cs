@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using InMemoryAws.S3.Model;
 
@@ -109,6 +110,29 @@ internal sealed partial class InternalS3Client
         return current;
     }
 
+    /// <summary>
+    /// Whether <paramref name="text"/> holds only what a tag may: letters, numbers and white space of
+    /// the Basic Multilingual Plane, and <c>+ - = . _ : / @</c>. A character outside the plane (an
+    /// emoji) or a combining mark is refused; S3 checks the text as sent, without normalizing it.
+    /// </summary>
+    private static bool IsTagText(string text)
+    {
+        foreach (var c in text)
+        {
+            var allowed = c is '+' or '-' or '=' or '.' or '_' or ':' or '/' or '@'
+                || char.IsWhiteSpace(c)
+                || CharUnicodeInfo.GetUnicodeCategory(c) is UnicodeCategory.UppercaseLetter or UnicodeCategory.LowercaseLetter
+                    or UnicodeCategory.TitlecaseLetter or UnicodeCategory.ModifierLetter or UnicodeCategory.OtherLetter
+                    or UnicodeCategory.DecimalDigitNumber or UnicodeCategory.LetterNumber or UnicodeCategory.OtherNumber;
+            if (!allowed)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     /// <summary>An object's tags: at most 10, each checked as every tag is.</summary>
     private static void CheckObjectTags(List<Tag> tags) =>
         CheckTags(tags, 10, "Object tags cannot be greater than 10");
@@ -129,12 +153,12 @@ internal sealed partial class InternalS3Client
         {
             var key = tag.Key ?? throw S3Errors.MalformedXml();
             var value = tag.Value ?? string.Empty;
-            if (key.Length is 0 or > 128)
+            if (key.Length is 0 or > 128 || !IsTagText(key))
             {
                 throw new S3Exception("InvalidTag", "The TagKey you have provided is invalid", HttpStatusCode.BadRequest, ("TagKey", key));
             }
 
-            if (value.Length > 256)
+            if (value.Length > 256 || !IsTagText(value))
             {
                 throw new S3Exception("InvalidTag", "The TagValue you have provided is invalid", HttpStatusCode.BadRequest, ("TagKey", key), ("TagValue", value));
             }

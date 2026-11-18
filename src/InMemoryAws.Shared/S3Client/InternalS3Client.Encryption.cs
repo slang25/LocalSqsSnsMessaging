@@ -90,6 +90,14 @@ internal sealed partial class InternalS3Client
         }
     }
 
+    /// <summary>The encryption a write that names none gets from the bucket's default; null for S3's default (SSE-S3).</summary>
+    private static ServerSideEncryptionByDefault? DefaultEncryption(S3Bucket bucket) =>
+        bucket.Encryption?.Rules?.FirstOrDefault()?.ApplyServerSideEncryptionByDefault;
+
+    /// <summary>Whether the bucket's default encryption uses an S3 Bucket Key, for an SSE-KMS default; null otherwise.</summary>
+    private static bool? DefaultBucketKey(S3Bucket bucket) =>
+        DefaultEncryption(bucket)?.SSEAlgorithm is "aws:kms" or "aws:kms:dsse" ? bucket.Encryption!.Rules![0].BucketKeyEnabled : null;
+
     private static BlockedEncryptionTypes BlockedTypes(bool blocksSseC) =>
         new() { EncryptionType = [blocksSseC ? "SSE-C" : "NONE"] };
 }

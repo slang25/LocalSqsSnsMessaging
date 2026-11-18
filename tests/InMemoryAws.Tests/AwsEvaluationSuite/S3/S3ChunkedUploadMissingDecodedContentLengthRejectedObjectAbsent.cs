@@ -32,7 +32,7 @@ public sealed class S3ChunkedUploadMissingDecodedContentLengthRejectedObjectAbse
             "a chunked PUT with no x-amz-decoded-content-length must be refused 411, got " +
             $"{status}: {S3Fidelity.Head(body, 300)}");
         Ensure(
-            S3Fidelity.XmlError(body) == ("MissingContentLength", "You must provide the Content-Length HTTP header."),
+            S3Fidelity.XmlCodeMessage(body) == ("MissingContentLength", "You must provide the Content-Length HTTP header."),
             $"the missing-decoded-length refusal carries no MissingContentLength error: {S3Fidelity.Head(body, 300)}");
         var error = await S3Fidelity.Error(() => s3.GetObjectAsync(bucket, badKey));
         Ensure(error.Code == "NoSuchKey", $"{Py.Repr(badKey)} must not exist after the rejected PUT, got {Py.Repr(error.Code)}");

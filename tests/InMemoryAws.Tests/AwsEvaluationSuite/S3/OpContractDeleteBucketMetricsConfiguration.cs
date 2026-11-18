@@ -39,7 +39,8 @@ public sealed class OpContractDeleteBucketMetricsConfiguration
         Ensure(gotId == metricsId, $"expected Id {Py.Repr(metricsId)}, got {Py.Repr(gotId)}");
 
         await s3.DeleteBucketMetricsConfigurationAsync(new DeleteBucketMetricsConfigurationRequest { BucketName = bucket, MetricsId = metricsId });
-        var (code, message) = await ClientError(() => s3.GetBucketMetricsConfigurationAsync(new GetBucketMetricsConfigurationRequest { BucketName = bucket, MetricsId = metricsId }));
+        // The .NET SDK answers GetBucketMetricsConfiguration's 404 as an empty success; the refusal is read off the wire.
+        var (code, message) = S3Fidelity.Botocore(await S3Fidelity.RawError(ctx, "GET", $"{bucket}?metrics&id={metricsId}", "expected a ClientError, but the call SUCCEEDED"));
         Ensure(code == "NoSuchConfiguration", $"expected NoSuchConfiguration, got {Py.Repr(code)}");
         Ensure(message == "The specified configuration does not exist.", $"unexpected message {Py.Repr(message)}");
 

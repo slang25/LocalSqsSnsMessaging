@@ -38,7 +38,7 @@ public sealed class S3checksumPresignedPutQueryMalformedBase64Rejected
             status == 400,
             $"a presigned PUT signed with a non-base64 ChecksumCRC32 returned {status}, expected 400: {S3Fidelity.Head(body, 300)}");
         Ensure(
-            S3Fidelity.XmlError(body) == ("InvalidRequest", "Value for x-amz-checksum-crc32 header is invalid."),
+            S3Fidelity.XmlCodeMessage(body) == ("InvalidRequest", "Value for x-amz-checksum-crc32 header is invalid."),
             $"the malformed-checksum refusal carries no InvalidRequest error: {S3Fidelity.Head(body, 300)}");
         Ensure(
             (await S3Fidelity.HeadError(s3, bucket, subjectKey)).Code == "404",

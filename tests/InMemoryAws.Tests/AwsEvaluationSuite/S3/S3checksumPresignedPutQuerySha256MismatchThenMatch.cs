@@ -40,7 +40,7 @@ public sealed class S3checksumPresignedPutQuerySha256MismatchThenMatch
             $"PUTting a body other than the one ChecksumSHA256={Py.Repr(checksumA)} was signed for returned " +
             $"{status}, expected 400: {S3Fidelity.Head(body, 300)}");
         Ensure(
-            S3Fidelity.XmlError(body) == ("BadDigest", "The SHA256 you specified did not match the calculated checksum."),
+            S3Fidelity.XmlCodeMessage(body) == ("BadDigest", "The SHA256 you specified did not match the calculated checksum."),
             $"the mismatched-body refusal carries no BadDigest error: {S3Fidelity.Head(body, 300)}");
         Ensure(
             (await S3Fidelity.HeadError(s3, bucket, key)).Code == "404",

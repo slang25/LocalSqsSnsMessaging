@@ -33,7 +33,7 @@ public sealed class S3ChunkedUploadTrailerChecksumMismatchRejectedObjectAbsent
         var (status, body) = await S3Fidelity.PutUnsignedTrailer(ctx, bucket, badKey, payload, "x-amz-checksum-crc32", "x-amz-checksum-crc32", wrongCrc32);
         Ensure(status == 400, $"a trailer CRC32 that does not match the payload must be refused 400, got {status}: {S3Fidelity.Head(body, 300)}");
         Ensure(
-            S3Fidelity.XmlError(body) == ("BadDigest", "The CRC32 you specified did not match the calculated checksum."),
+            S3Fidelity.XmlCodeMessage(body) == ("BadDigest", "The CRC32 you specified did not match the calculated checksum."),
             $"the mismatched-trailer refusal carries no BadDigest error: {S3Fidelity.Head(body, 300)}");
         var error = await S3Fidelity.Error(() => s3.GetObjectAsync(bucket, badKey));
         Ensure(error.Code == "NoSuchKey", $"{Py.Repr(badKey)} must not exist after the rejected PUT, got {Py.Repr(error.Code)}");

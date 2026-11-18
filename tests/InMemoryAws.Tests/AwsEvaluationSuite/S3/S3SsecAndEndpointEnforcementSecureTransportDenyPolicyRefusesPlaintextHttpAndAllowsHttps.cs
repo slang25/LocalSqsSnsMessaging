@@ -58,8 +58,8 @@ public sealed class S3SsecAndEndpointEnforcementSecureTransportDenyPolicyRefuses
         // GET over http:// is refused with an explicit-deny AccessDenied.
         (status, _, raw) = await S3Fidelity.AwaitStatus(ctx, () => S3Fidelity.Send(ctx, "GET", S3Fidelity.AsHttp(getUrl)), want: 403);
         Ensure(
-            S3Fidelity.XmlError(raw).Code == "AccessDenied",
-            $"http:// GET under the SecureTransport Deny returned code {Py.Repr(S3Fidelity.XmlError(raw).Code)}, expected " +
+            S3Fidelity.XmlCodeMessage(raw).Code == "AccessDenied",
+            $"http:// GET under the SecureTransport Deny returned code {Py.Repr(S3Fidelity.XmlCodeMessage(raw).Code)}, expected " +
             $"AccessDenied — body {S3Fidelity.Head(raw, 300)}");
         Ensure(Encoding.UTF8.GetString(raw).Contains("explicit deny", StringComparison.Ordinal), $"the http:// refusal does not name the explicit deny: {S3Fidelity.Head(raw, 400)}");
         Ensure(raw.AsSpan().IndexOf(body) < 0, "the refused http:// GET leaked the object's bytes");
@@ -74,8 +74,8 @@ public sealed class S3SsecAndEndpointEnforcementSecureTransportDenyPolicyRefuses
         // List: http refused, https served.
         (status, _, raw) = await S3Fidelity.Send(ctx, "GET", S3Fidelity.AsHttp(listUrl));
         Ensure(
-            status == 403 && S3Fidelity.XmlError(raw).Code == "AccessDenied",
-            $"http:// ListObjectsV2 returned HTTP {status} code {Py.Repr(S3Fidelity.XmlError(raw).Code)}; expected 403 " +
+            status == 403 && S3Fidelity.XmlCodeMessage(raw).Code == "AccessDenied",
+            $"http:// ListObjectsV2 returned HTTP {status} code {Py.Repr(S3Fidelity.XmlCodeMessage(raw).Code)}; expected 403 " +
             "AccessDenied");
         (status, _, raw) = await S3Fidelity.Send(ctx, "GET", listUrl);
         Ensure(status == 200, $"https:// ListObjectsV2 returned HTTP {status}: {S3Fidelity.Head(raw, 300)}");
@@ -85,8 +85,8 @@ public sealed class S3SsecAndEndpointEnforcementSecureTransportDenyPolicyRefuses
         // Write: http refused and nothing lands; https writes.
         (status, _, raw) = await S3Fidelity.Send(ctx, "PUT", S3Fidelity.AsHttp(putUrl), data: "plaintext write"u8.ToArray());
         Ensure(
-            status == 403 && S3Fidelity.XmlError(raw).Code == "AccessDenied",
-            $"http:// PUT returned HTTP {status} code {Py.Repr(S3Fidelity.XmlError(raw).Code)}; expected 403 AccessDenied");
+            status == 403 && S3Fidelity.XmlCodeMessage(raw).Code == "AccessDenied",
+            $"http:// PUT returned HTTP {status} code {Py.Repr(S3Fidelity.XmlCodeMessage(raw).Code)}; expected 403 AccessDenied");
         var (code, _, msg) = await S3Fidelity.ErrorTriple(() => s3.GetObjectAsync(bucket, "written.txt"));
         Ensure((code, msg) == ("NoSuchKey", "The specified key does not exist."), $"the refused http:// PUT created an object ({Py.Repr(code)}: {Py.Repr(msg)})");
         (status, _, raw) = await S3Fidelity.Send(ctx, "PUT", putUrl, data: "tls write"u8.ToArray());

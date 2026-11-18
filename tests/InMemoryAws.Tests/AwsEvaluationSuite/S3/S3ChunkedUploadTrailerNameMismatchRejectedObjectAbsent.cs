@@ -34,7 +34,7 @@ public sealed class S3ChunkedUploadTrailerNameMismatchRejectedObjectAbsent
             "a trailer chunk whose header name does not match x-amz-trailer must be refused 400, " +
             $"got {status}: {S3Fidelity.Head(body, 300)}");
         Ensure(
-            S3Fidelity.XmlError(body) == ("MalformedTrailerError",
+            S3Fidelity.XmlCodeMessage(body) == ("MalformedTrailerError",
                 "The request contained trailing data that was not well-formed or did not conform to " +
                 "our published schema."),
             $"the name-mismatch refusal carries no MalformedTrailerError: {S3Fidelity.Head(body, 300)}");

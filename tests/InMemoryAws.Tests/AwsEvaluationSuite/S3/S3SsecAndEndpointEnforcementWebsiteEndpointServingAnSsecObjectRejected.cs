@@ -61,10 +61,10 @@ public sealed class S3SsecAndEndpointEnforcementWebsiteEndpointServingAnSsecObje
         var rest = S3Fidelity.WithoutQuery(S3Fidelity.Presign(ctx, "GET", bucket, "secret.html", 60, pathStyle: true));
         (status, _, raw) = await S3Fidelity.Http(ctx, "GET", rest, withReferer);
         Ensure(
-            status == 400 && S3Fidelity.XmlError(raw).Code == "InvalidRequest",
-            $"anonymous REST GET of the SSE-C object returned HTTP {status} code {Py.Repr(S3Fidelity.XmlError(raw).Code)}; " +
+            status == 400 && S3Fidelity.XmlCodeMessage(raw).Code == "InvalidRequest",
+            $"anonymous REST GET of the SSE-C object returned HTTP {status} code {Py.Repr(S3Fidelity.XmlCodeMessage(raw).Code)}; " +
             "expected 400 InvalidRequest");
-        Ensure(S3Fidelity.XmlError(raw).Message == S3Fidelity.StoredSse, S3Fidelity.XmlError(raw).Message ?? "None");
+        Ensure(S3Fidelity.XmlCodeMessage(raw).Message == S3Fidelity.StoredSse, S3Fidelity.XmlCodeMessage(raw).Message ?? "None");
         Ensure(raw.AsSpan().IndexOf(secret.AsSpan(0, 40)) < 0, "the anonymous REST GET served SSE-C object bytes");
 
         // With its key, the SSE-C object is still readable.

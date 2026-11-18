@@ -145,7 +145,7 @@ public sealed class S3SsecAndEndpointEnforcementSsecMultipartUploadRoundTripsOnl
         Ensure(raw.SequenceEqual([.. part1, .. part2]), $"presigned SSE-C GET returned {raw.Length} bytes that are not the concatenated parts");
         var plainUrl = S3Fidelity.Presign(ctx, "GET", bucket, obj, 300, pathStyle: true);
         (rawStatus, _, raw) = await S3Fidelity.Send(ctx, "GET", plainUrl);
-        var (xmlCode, xmlMessage) = S3Fidelity.XmlError(raw);
+        var (xmlCode, xmlMessage) = S3Fidelity.XmlCodeMessage(raw);
         Ensure(
             (rawStatus, xmlCode, xmlMessage) == (400, "InvalidRequest", S3Fidelity.StoredSse),
             $"presigned GET with no SSE-C headers returned HTTP {rawStatus} code {Py.Repr(xmlCode)}; " +

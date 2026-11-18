@@ -126,7 +126,7 @@ public sealed class S3SsecAndEndpointEnforcementSsecCopyToSseS3WithoutTheCopySou
         // The source still refuses a keyless raw GET.
         var srcUrl = S3Fidelity.Presign(ctx, "GET", bucket, src, 300, pathStyle: true);
         (rawStatus, _, raw) = await S3Fidelity.Send(ctx, "GET", srcUrl);
-        var (xmlCode, xmlMessage) = S3Fidelity.XmlError(raw);
+        var (xmlCode, xmlMessage) = S3Fidelity.XmlCodeMessage(raw);
         Ensure(
             (rawStatus, xmlCode, xmlMessage) == (400, "InvalidRequest", S3Fidelity.StoredSse),
             $"keyless raw GET of the SSE-C SOURCE returned HTTP {rawStatus} code {Py.Repr(xmlCode)} " +

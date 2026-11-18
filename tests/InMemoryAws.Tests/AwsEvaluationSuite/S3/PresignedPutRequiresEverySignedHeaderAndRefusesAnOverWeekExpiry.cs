@@ -60,7 +60,7 @@ public sealed class PresignedPutRequiresEverySignedHeaderAndRefusesAnOverWeekExp
             $"{status}, expected 403 — the signature is not being verified over the signed headers, so " +
             $"any holder of the URL can upload without the encryption the issuer required: {S3Fidelity.Head(body)}");
         Ensure(
-            S3Fidelity.XmlError(body) == ("SignatureDoesNotMatch", S3Fidelity.SignatureMismatchMessage),
+            S3Fidelity.XmlCodeMessage(body) == ("SignatureDoesNotMatch", S3Fidelity.SignatureMismatchMessage),
             $"the refused presigned PUT returned no SignatureDoesNotMatch error: {S3Fidelity.Head(body, 300)}");
 
         // Beat 3 — effect absent, by an independent read.
@@ -98,7 +98,7 @@ public sealed class PresignedPutRequiresEverySignedHeaderAndRefusesAnOverWeekExp
             $"query authentication caps the window at {weekSeconds}s, and a target that ignores the cap " +
             $"issues effectively permanent URLs: {S3Fidelity.Head(body)}");
         Ensure(
-            S3Fidelity.XmlError(body) == ("AuthorizationQueryParametersError",
+            S3Fidelity.XmlCodeMessage(body) == ("AuthorizationQueryParametersError",
                 "X-Amz-Expires must be less than a week (in seconds); that is, the given X-Amz-Expires " +
                 $"must be less than {weekSeconds} seconds"),
             $"the over-a-week presigned GET returned no AuthorizationQueryParametersError error: {S3Fidelity.Head(body, 300)}");
