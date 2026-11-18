@@ -37,6 +37,7 @@ internal static partial class S3WireProtocol
         Exception? failure = null;
         try
         {
+            S3RequestAuthentication.Check(request, cloud);
             S3ChunkedBody.Decode(request);
 
             // S3's front end refuses a NUL in an object key before any operation sees it: a bare 400,
@@ -48,7 +49,8 @@ internal static partial class S3WireProtocol
 
             operation = IsDirectoryBucketControl(request) && request.PathKind == S3PathKind.Service && request.Method == "GET"
                 ? "ListDirectoryBuckets"
-                : request.Method == "OPTIONS" && request.PathKind != S3PathKind.Service ? "PreflightRequest" : Route(request);
+                : request.Method == "OPTIONS" && request.PathKind != S3PathKind.Service ? "PreflightRequest"
+                : InternalS3Client.IsPostObject(request) ? "PostObject" : Route(request);
             if (operation is null)
             {
                 throw S3Errors.MethodNotAllowed(request.Method, request.PathKind switch
@@ -70,7 +72,15 @@ internal static partial class S3WireProtocol
             }
             else
             {
-                await DispatchAsync(operation, request, client, response, cancellationToken).ConfigureAwait(false);
+                if (operation == "PostObject")
+                {
+                    client.PostObject(request, response);
+                }
+                else
+                {
+                    await DispatchAsync(operation, request, client, response, cancellationToken).ConfigureAwait(false);
+                }
+
                 InternalS3Client.AddCorsHeaders(request, cloud, response);
             }
 

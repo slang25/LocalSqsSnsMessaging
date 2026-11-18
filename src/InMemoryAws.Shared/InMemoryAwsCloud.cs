@@ -117,6 +117,21 @@ public sealed class InMemoryAwsCloud
     public ISet<string>? KmsKeyAliases { get; init; }
 
     /// <summary>
+    /// Gets or initializes the secret access keys the cloud knows, by access key id, so S3 can
+    /// authenticate requests signed with them.
+    /// </summary>
+    /// <remarks>
+    /// By default (<see langword="null"/>) no signature is checked: requests may be signed with any
+    /// credentials, or none. For a request signed with SigV4 (an <c>Authorization</c> header or a
+    /// presigned URL) by an access key listed here, S3 recomputes the signature with its secret and
+    /// refuses a mismatch (<c>SignatureDoesNotMatch</c>), refuses a request time more than 15 minutes
+    /// from <see cref="TimeProvider"/>'s (<c>RequestTimeTooSkewed</c>) and a presigned URL used after
+    /// it expired, and checks each chunk signature of a streamed upload. Requests signed by any other
+    /// access key are served as before. Other services don't check signatures.
+    /// </remarks>
+    public IReadOnlyDictionary<string, string>? SecretAccessKeys { get; init; }
+
+    /// <summary>
     /// Gets or initializes how long DynamoDB's asynchronous changes take, measured on
     /// <see cref="TimeProvider"/>: a table CreateTable or a restore makes stays <c>CREATING</c>
     /// (with its global secondary indexes), a table whose throughput or billing mode UpdateTable

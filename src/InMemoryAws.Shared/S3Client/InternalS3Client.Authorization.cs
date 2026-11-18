@@ -4,8 +4,9 @@ namespace InMemoryAws.S3;
 
 /// <summary>
 /// What S3 checks about who sends a request, once the bucket is found: the expected bucket owner,
-/// Requester Pays, the bucket policy's explicit Deny statements, and the bucket's block on SSE-C
-/// uploads.
+/// Requester Pays, the bucket policy's explicit Deny statements, the bucket's block on SSE-C
+/// uploads, a write's ACL and website redirect headers, and the SSE-C keys a copy source or an
+/// upload's part needs.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -111,6 +112,7 @@ internal sealed partial class InternalS3Client
         ["PutBucketIntelligentTieringConfiguration"] = "PutIntelligentTieringConfiguration",
         ["DeleteBucketIntelligentTieringConfiguration"] = "PutIntelligentTieringConfiguration",
         ["GetBucketLoggingConfiguration"] = "GetBucketLogging",
+        ["PostObject"] = "PutObject",
     };
 
     /// <summary>The ARN of the caller every signed request acts as: the cloud account's root user.</summary>
@@ -150,6 +152,12 @@ internal sealed partial class InternalS3Client
             DenyExplicitly(bucket, action, resource);
         }
 
+        if (operation is "PutObject" or "CopyObject" or "CreateMultipartUpload")
+        {
+            CheckWriteAclHeaders(bucket, request, action, resource);
+            CheckWebsiteRedirectLocation(request.Header("x-amz-website-redirect-location"));
+        }
+
         if (action == "PutObject" && operation is "PutObject" or "CopyObject" or "CreateMultipartUpload"
             && request.Header("x-amz-server-side-encryption-customer-algorithm") is not null
             && bucket.BlocksSseC)
@@ -164,6 +172,13 @@ internal sealed partial class InternalS3Client
         {
             AuthorizeCopySource(request);
         }
+
+        if (operation is "UploadPart" or "UploadPartCopy"
+            && request.Query("uploadId") is { } uploadId
+            && bucket.Uploads.TryGetValue(uploadId, out var upload))
+        {
+            CheckUploadSseCustomerKey(upload, request);
+        }
     }
 
     /// <summary>A copy reads its source: the source bucket's policy must not deny <c>s3:GetObject</c> on it.</summary>
@@ -174,6 +189,11 @@ internal sealed partial class InternalS3Client
         if (Store.Buckets.TryGetValue(sourceBucket, out var source))
         {
             DenyExplicitly(source, sourceVersionId is null ? "GetObject" : "GetObjectVersion", $"{source.Arn}/{sourceKey}");
+            var version = sourceVersionId is null ? source.Current(sourceKey) : source.Version(sourceKey, sourceVersionId);
+            if (version is { IsDeleteMarker: false })
+            {
+                CheckCopySourceSseCustomerKey(version, request);
+            }
         }
     }
 
