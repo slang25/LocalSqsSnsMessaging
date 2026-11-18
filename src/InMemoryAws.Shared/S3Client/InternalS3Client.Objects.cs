@@ -198,6 +198,14 @@ internal sealed partial class InternalS3Client
                 {
                     var key = item.Key ?? throw S3Errors.MalformedXml();
                     CheckDeleteConditions(bucket, key, item);
+
+                    // A version id S3 could never have minted is NoSuchVersion for its key here, where
+                    // GetObject and DeleteObject refuse it as InvalidArgument.
+                    if (item.VersionId is { } versionId && !S3VersionIds.IsIntact(versionId))
+                    {
+                        throw S3Errors.NoSuchVersion(key, versionId);
+                    }
+
                     var result = DeleteOne(bucket, key, item.VersionId, request.BypassGovernanceRetention == true);
                     if (request.Delete!.Quiet != true)
                     {
@@ -447,6 +455,7 @@ internal sealed partial class InternalS3Client
             output.ChecksumType = version.ChecksumType;
         }
 
+        output.Expiration = LifecycleExpiration(bucket, version);
         DescribeMore(bucket, version, output);
         return (offset, length);
     }
