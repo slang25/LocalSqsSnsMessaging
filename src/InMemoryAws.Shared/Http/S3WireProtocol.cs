@@ -38,6 +38,14 @@ internal static partial class S3WireProtocol
         try
         {
             S3ChunkedBody.Decode(request);
+
+            // S3's front end refuses a NUL in an object key before any operation sees it: a bare 400,
+            // with no error document.
+            if (request.Key is { } key && key.Contains('\0', StringComparison.Ordinal))
+            {
+                throw new S3Exception(BareRefusal, "A NUL in an object key.", HttpStatusCode.BadRequest);
+            }
+
             operation = IsDirectoryBucketControl(request) && request.PathKind == S3PathKind.Service && request.Method == "GET"
                 ? "ListDirectoryBuckets"
                 : request.Method == "OPTIONS" && request.PathKind != S3PathKind.Service ? "PreflightRequest" : Route(request);
@@ -81,6 +89,11 @@ internal static partial class S3WireProtocol
         {
             throw;
         }
+        catch (S3Exception ex) when (ex.ErrorCode == BareRefusal)
+        {
+            failure = ex;
+            response = new S3WireResponse { Status = (int)ex.StatusCode };
+        }
         catch (S3Exception ex)
         {
             failure = ex;
@@ -116,6 +129,9 @@ internal static partial class S3WireProtocol
 
         return response;
     }
+
+    /// <summary>The code of a refusal S3 answers with its status alone: no error document.</summary>
+    private const string BareRefusal = "<bare>";
 
     /// <summary>Whether the request was sent to S3 Express's control endpoint (<c>s3express-control.{region}.amazonaws.com</c>).</summary>
     private static bool IsDirectoryBucketControl(S3WireRequest request) =>

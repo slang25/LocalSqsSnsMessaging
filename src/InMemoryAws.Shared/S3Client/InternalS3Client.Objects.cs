@@ -62,7 +62,10 @@ internal sealed partial class InternalS3Client
             var output = new PutObjectOutput
             {
                 ETag = version.ETag,
-                VersionId = VersionIdHeader(bucket, version),
+
+                // A write to a bucket whose versioning is suspended answers no version id, though the
+                // version it wrote is the null one.
+                VersionId = version.VersionId == S3ObjectVersion.NullVersionId ? null : VersionIdHeader(bucket, version),
                 ServerSideEncryption = version.SseCustomerKeyMd5 is null ? version.ServerSideEncryption : null,
                 SSEKMSKeyId = version.SseKmsKeyId,
                 BucketKeyEnabled = version.BucketKeyEnabled,
@@ -206,7 +209,7 @@ internal sealed partial class InternalS3Client
 
                     // A version id S3 could never have minted is NoSuchVersion for its key here, where
                     // GetObject and DeleteObject refuse it as InvalidArgument.
-                    if (item.VersionId is { } versionId && !S3VersionIds.IsIntact(versionId))
+                    if (item.VersionId is { } versionId && versionId != S3ObjectVersion.NullVersionId && !S3VersionIds.CouldBeMinted(versionId))
                     {
                         throw S3Errors.NoSuchVersion(key, versionId);
                     }
