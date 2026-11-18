@@ -53,6 +53,7 @@ internal sealed partial class InternalS3Client
                 Tags = tags,
                 OwnerId = OwnerId,
             };
+            ApplyObjectLock(bucket, version, request);
             bucket.Add(version);
             OnObjectWritten(bucket, version, "ObjectCreated:Put");
             var output = new PutObjectOutput
@@ -193,6 +194,7 @@ internal sealed partial class InternalS3Client
                 try
                 {
                     var key = item.Key ?? throw S3Errors.MalformedXml();
+                    CheckDeleteConditions(bucket, key, item);
                     var result = DeleteOne(bucket, key, item.VersionId, request.BypassGovernanceRetention == true);
                     if (request.Delete!.Quiet != true)
                     {
@@ -280,6 +282,7 @@ internal sealed partial class InternalS3Client
                 Tags = replaceTags ? ParseTagHeader(request.Tagging) : [.. source.Tags.Select(t => new Tag { Key = t.Key, Value = t.Value })],
                 OwnerId = OwnerId,
             };
+            ApplyObjectLock(bucket, version, request);
             bucket.Add(version);
             OnObjectWritten(bucket, version, "ObjectCreated:Copy");
             var result = new CopyObjectResult { ETag = version.ETag, LastModified = version.LastModified, ChecksumType = version.ChecksumType };
@@ -295,6 +298,12 @@ internal sealed partial class InternalS3Client
             });
         }
     }
+
+    /// <summary>
+    /// Applies a write's Object Lock headers (or the bucket's default retention) to the new version
+    /// before it is stored; refuses lock headers a bucket without Object Lock can't take.
+    /// </summary>
+    partial void ApplyObjectLock(S3Bucket bucket, S3ObjectVersion version, IS3ObjectLockMembers request);
 
     /// <summary>Called under the store's lock after an object version is written (notifications hook in here).</summary>
     partial void OnObjectWritten(S3Bucket bucket, S3ObjectVersion version, string eventName);
