@@ -164,14 +164,21 @@ internal sealed partial class InternalS3Client
     }
 
     /// <summary>
-    /// A request to a directory bucket signed with a session (<c>x-amz-s3session-token</c>) is refused
+    /// A request to a directory bucket for something it doesn't support is refused (see
+    /// <see cref="CheckDirectoryOperation"/>). One signed with a session (<c>x-amz-s3session-token</c>) is refused
     /// (<c>AccessDenied</c>) when the session is unknown to the bucket (minted for another one), has
     /// expired, or is <c>ReadOnly</c> and the request writes. Requests without a session token (the
     /// control endpoint's, CreateSession's) are not checked.
     /// </summary>
     partial void AuthorizeSession(S3Bucket bucket)
     {
-        if (!bucket.IsDirectory || Request?.Header("x-amz-s3session-token") is not { } token || Request.Operation == "CreateSession")
+        if (!bucket.IsDirectory)
+        {
+            return;
+        }
+
+        CheckDirectoryOperation(bucket, Request?.Operation);
+        if (Request?.Header("x-amz-s3session-token") is not { } token || Request.Operation == "CreateSession")
         {
             return;
         }
@@ -180,6 +187,38 @@ internal sealed partial class InternalS3Client
             || (session.Mode == "ReadOnly" && !SessionReadOperations.Contains(Request.Operation ?? string.Empty)))
         {
             throw S3Errors.AccessDenied();
+        }
+    }
+
+    /// <summary>
+    /// Refuses what a directory bucket doesn't support: object tags (<c>NotImplemented</c>), and the
+    /// versioning, notification and replication configurations, whose documents S3 reads as a
+    /// malformed <c>CreateBucketConfiguration</c> (<c>InvalidArgument</c>). The refusal names the bucket's
+    /// region (<c>x-amz-bucket-region</c>), as S3's do, so SDKs don't go looking for it.
+    /// </summary>
+    private static void CheckDirectoryOperation(S3Bucket bucket, string? operation)
+    {
+        var refusal = Refusal(operation);
+        if (refusal is not null)
+        {
+            throw refusal.WithHeader("x-amz-bucket-region", bucket.Region);
+        }
+    }
+
+    private static S3Exception? Refusal(string? operation)
+    {
+        switch (operation)
+        {
+            case "PutObjectTagging" or "GetObjectTagging" or "DeleteObjectTagging":
+                return new S3Exception("NotImplemented", "This bucket does not support Object Tags.", HttpStatusCode.NotImplemented);
+            case "PutBucketVersioning":
+                return S3Errors.InvalidArgument("VersioningConfiguration is not valid, expected CreateBucketConfiguration");
+            case "PutBucketNotificationConfiguration":
+                return S3Errors.InvalidArgument("NotificationConfiguration is not valid, expected CreateBucketConfiguration");
+            case "PutBucketReplication":
+                return S3Errors.InvalidArgument("ReplicationConfiguration is not valid, expected CreateBucketConfiguration");
+            default:
+                return null;
         }
     }
 
