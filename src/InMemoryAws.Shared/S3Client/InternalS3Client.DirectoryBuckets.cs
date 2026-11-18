@@ -222,6 +222,26 @@ internal sealed partial class InternalS3Client
         }
     }
 
+    /// <summary>
+    /// S3 names a directory bucket's region (<c>x-amz-bucket-region</c>) on every refusal of a request to
+    /// it; without it, SDKs treat the refusal as a wrong-region answer and go looking for the bucket.
+    /// </summary>
+    internal static void AddDirectoryBucketRegion(Http.S3WireRequest request, InMemoryAwsCloud cloud, Http.S3WireResponse response)
+    {
+        if (request.Bucket is not { } name || !name.EndsWith("--x-s3", StringComparison.Ordinal) || response.Header("x-amz-bucket-region") is not null)
+        {
+            return;
+        }
+
+        lock (cloud.S3.Gate)
+        {
+            if (cloud.S3.Buckets.TryGetValue(name, out var bucket))
+            {
+                response.SetHeader("x-amz-bucket-region", bucket.Region);
+            }
+        }
+    }
+
     /// <summary>The session the request is signed with, if it names one of the bucket's.</summary>
     private S3ExpressSession? RequestSession(S3Bucket bucket) =>
         Request?.Header("x-amz-s3session-token") is { } token && bucket.Sessions.TryGetValue(token, out var session) ? session : null;

@@ -108,6 +108,7 @@ internal static partial class S3WireProtocol
         {
             failure = ex;
             response = Error(ex.ErrorCode ?? "InternalError", ex.Message, ex.StatusCode, ex.Details, ex.Headers, requestId);
+            InternalS3Client.AddDirectoryBucketRegion(request, cloud, response);
         }
         catch (AwsServiceException ex)
         {
