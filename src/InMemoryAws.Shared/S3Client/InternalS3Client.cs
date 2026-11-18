@@ -102,7 +102,7 @@ internal sealed partial class InternalS3Client : S3ClientBase
     }
 
     /// <summary>A new version id: 32 URL-safe characters, as S3 mints them.</summary>
-    private static string NewVersionId() => RandomToken(24);
+    private static string NewVersionId() => S3VersionIds.New(Random);
 
     /// <summary>A new multipart upload id.</summary>
     private static string NewUploadId() => RandomToken(60);

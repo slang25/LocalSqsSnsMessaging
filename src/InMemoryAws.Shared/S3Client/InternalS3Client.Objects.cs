@@ -323,6 +323,7 @@ internal sealed partial class InternalS3Client
             if (version.IsDeleteMarker)
             {
                 throw S3Errors.MethodNotAllowed(Request?.Method ?? "GET", "DeleteMarker")
+                    .WithHeader("Allow", "DELETE")
                     .WithHeader("x-amz-delete-marker", "true")
                     .WithHeader("x-amz-version-id", version.VersionId)
                     .WithHeader("Last-Modified", Http.S3Wire.FormatTimestamp(version.LastModified, "rfc822"));
@@ -639,7 +640,8 @@ internal sealed partial class InternalS3Client
             return;
         }
 
-        if (versionId.Length == 0 || versionId.Length > 1024 || versionId.Any(c => !(char.IsLetterOrDigit(c) && c < 128) && c is not ('.' or '_' or '-')))
+        if (versionId.Length == 0 || versionId.Length > 1024 || versionId.Any(c => !(char.IsLetterOrDigit(c) && c < 128) && c is not ('.' or '_' or '-'))
+            || !S3VersionIds.IsIntact(versionId))
         {
             throw S3Errors.InvalidArgument("Invalid version id specified", "versionId", versionId);
         }
