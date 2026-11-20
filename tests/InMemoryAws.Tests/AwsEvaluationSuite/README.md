@@ -267,7 +267,9 @@ Public Access, presigned URLs, POST uploads and SigV4, CORS, website hosting, li
 replication, encryption and SSE-C, storage classes and restores, S3 Metadata and object
 annotations, the stored-only bucket configurations, and notifications: 517 of the 537 checks in
 `behavioral/s3`, `behavioral/s3__sqs`, `behavioral/s3__sns__sqs` and `behavioral/events__s3__sqs`.
-515 pass and 2 are known gaps.
+513 pass and 4 are known gaps: the two in `events__s3__sqs` (EventBridge delivering to a queue with
+no policy), and the two bucket policies that deny plain HTTP, because `aws:SecureTransport` is
+always true, so a deny-unless-TLS guardrail doesn't lock out a client of the plain-HTTP server.
 
 The context gives the cloud the fidelity clients' secret (`SecretAccessKeys`: `test`/`test`), so
 every S3 port runs with SigV4 verification on, as against AWS, and the checks about signatures,

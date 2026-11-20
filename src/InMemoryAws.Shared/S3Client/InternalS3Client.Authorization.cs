@@ -242,8 +242,10 @@ internal sealed partial class InternalS3Client
         && !(bucket.PublicAccessBlock?.RestrictPublicBuckets == true && policy.IsPublic());
 
     /// <summary>
-    /// The request as policy evaluation sees it: the caller (the account's root user, or nobody), the
-    /// transport, and the condition keys S3 adds from the request's headers and query.
+    /// The request as policy evaluation sees it: the caller (the account's root user, or nobody) and
+    /// the condition keys S3 adds from the request's headers and query. As for every service,
+    /// <c>aws:SecureTransport</c> is always true, so a deny-unless-TLS guardrail (CDK's
+    /// <c>enforceSSL</c>) doesn't lock out a client of the plain-HTTP server.
     /// </summary>
     private ResourcePolicy.RequestContext PolicyRequest(string action, string resource)
     {
@@ -273,8 +275,7 @@ internal sealed partial class InternalS3Client
             resource,
             _cloud.CurrentAccountId,
             CallerArn,
-            SourceIp: IPAddress.Loopback,
-            SecureTransport: request?.SecureTransport ?? true)
+            SourceIp: IPAddress.Loopback)
         {
             ServiceKeys = keys,
         };

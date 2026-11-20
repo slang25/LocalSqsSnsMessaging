@@ -18,6 +18,7 @@ public sealed class S3SsecAndEndpointEnforcementSecureTransportDenyPolicyRefuses
     /// deny AccessDenied while each https:// twin is served; removing it restores http.
     /// </summary>
     [Test]
+    [KnownFidelityGap(FidelityGap.SecureTransport, "aws:SecureTransport is always true, so the Deny-unless-TLS bucket policy never refuses the plain-HTTP requests")]
     [DisplayName("s3.s3-ssec-and-endpoint-enforcement-secure-transport-deny-policy-refuses-plaintext-http-and-allows-https")]
     [Timeout(FidelityContext.HangTimeoutMilliseconds)]
     public async Task Run(CancellationToken cancellationToken)

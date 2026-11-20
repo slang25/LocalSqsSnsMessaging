@@ -20,6 +20,7 @@ public sealed class SecureTransportPolicyPlainHttpDenied
     /// Reference: https://docs.aws.amazon.com/AmazonS3/latest/userguide/example-bucket-policies.html
     /// </summary>
     [Test]
+    [KnownFidelityGap(FidelityGap.SecureTransport, "aws:SecureTransport is always true, so the Deny-unless-TLS bucket policy never refuses the plain-HTTP requests")]
     [DisplayName("s3.secure-transport-policy-plain-http-denied")]
     [Timeout(FidelityContext.HangTimeoutMilliseconds)]
     public async Task Run(CancellationToken cancellationToken)

@@ -37,11 +37,11 @@ the port). The *Last changed* column is the last upstream commit to change the c
 | [`sns`](#behavioralsns) | 245 | 207 | 1 | 38 | 0 |
 | [`sns__sqs`](#behavioralsns__sqs) | 12 | 12 | 0 | 0 | 0 |
 | [`sqs`](#behavioralsqs) | 306 | 271 | 3 | 35 | 0 |
-| [`s3`](#behaviorals3) | 481 | 465 | 0 | 16 | 0 |
+| [`s3`](#behaviorals3) | 481 | 465 | 2 | 16 | 0 |
 | [`s3__sqs`](#behaviorals3__sqs) | 16 | 13 | 0 | 3 | 0 |
 | [`s3__sns__sqs`](#behaviorals3__sns__sqs) | 2 | 2 | 0 | 0 | 0 |
 | [`events__s3__sqs`](#behavioralevents__s3__sqs) | 38 | 37 | 2 | 1 | 0 |
-| **Total** | **2302** | **2092** | **22** | **210** | **0** |
+| **Total** | **2302** | **2092** | **24** | **210** | **0** |
 
 ### Not ported, by reason
 
@@ -77,6 +77,7 @@ the port). The *Last changed* column is the last upstream commit to change the c
 | `DynamoDbThroughput` | 4 |
 | `EmulatorBudget` | 3 |
 | `Other` | 2 |
+| `SecureTransport` | 2 |
 | `Validation` | 2 |
 | `DynamoDbDetail` | 1 |
 
@@ -2324,7 +2325,7 @@ the port). The *Last changed* column is the last upstream commit to change the c
 | `s3.s3-put-object-with-a-deliberately-wrong-crc32-is-rejected-and-the-key-is-absent` | `4df2823` | ported | `S3/S3PutObjectWithADeliberatelyWrongCrc32IsRejectedAndTheKeyIsAbsent.cs` |
 | `s3.s3-refused-conditional-gets-create-no-version-and-leave-the-object-intact` | `4df2823` | ported | `S3/S3RefusedConditionalGetsCreateNoVersionAndLeaveTheObjectIntact.cs` |
 | `s3.s3-sse-kms-object-is-unreadable-while-its-cmk-is-disabled-and-readable-again-after` | `4df2823` | not ported | KMS keys |
-| `s3.s3-ssec-and-endpoint-enforcement-secure-transport-deny-policy-refuses-plaintext-http-and-allows-https` | `4df2823` | ported | `S3/S3SsecAndEndpointEnforcementSecureTransportDenyPolicyRefusesPlaintextHttpAndAllowsHttps.cs` |
+| `s3.s3-ssec-and-endpoint-enforcement-secure-transport-deny-policy-refuses-plaintext-http-and-allows-https` | `4df2823` | known gap: SecureTransport | `S3/S3SsecAndEndpointEnforcementSecureTransportDenyPolicyRefusesPlaintextHttpAndAllowsHttps.cs` |
 | `s3.s3-ssec-and-endpoint-enforcement-ssec-copy-to-sse-s3-without-the-copy-source-key-rejected` | `4df2823` | ported | `S3/S3SsecAndEndpointEnforcementSsecCopyToSseS3WithoutTheCopySourceKeyRejected.cs` |
 | `s3.s3-ssec-and-endpoint-enforcement-ssec-multipart-upload-round-trips-only-with-the-customer-key` | `4df2823` | ported | `S3/S3SsecAndEndpointEnforcementSsecMultipartUploadRoundTripsOnlyWithTheCustomerKey.cs` |
 | `s3.s3-ssec-and-endpoint-enforcement-ssec-request-over-plain-http-rejected` | `4df2823` | ported | `S3/S3SsecAndEndpointEnforcementSsecRequestOverPlainHttpRejected.cs` |
@@ -2372,7 +2373,7 @@ the port). The *Last changed* column is the last upstream commit to change the c
 | `s3.s3x-s3express-session-and-listing-readwrite-session-round-trip` | `4df2823` | ported | `S3/S3xS3expressSessionAndListingReadwriteSessionRoundTrip.cs` |
 | `s3.s3x-s3express-session-and-listing-start-after-rejected` | `4df2823` | ported | `S3/S3xS3expressSessionAndListingStartAfterRejected.cs` |
 | `s3.s3x-s3express-session-and-listing-unterminated-prefix-rejected` | `4df2823` | ported | `S3/S3xS3expressSessionAndListingUnterminatedPrefixRejected.cs` |
-| `s3.secure-transport-policy-plain-http-denied` | `4df2823` | ported | `S3/SecureTransportPolicyPlainHttpDenied.cs` |
+| `s3.secure-transport-policy-plain-http-denied` | `4df2823` | known gap: SecureTransport | `S3/SecureTransportPolicyPlainHttpDenied.cs` |
 | `s3.select-object-content-permission-denied` | `4df2823` | not ported | IAM roles, users and identity policies |
 | `s3.sigv4skew-cross-region-credential-scope-rejected` | `4df2823` | ported | `S3/Sigv4skewCrossRegionCredentialScopeRejected.cs` |
 | `s3.sigv4skew-future-dated-put-outside-window-rejected` | `4df2823` | ported | `S3/Sigv4skewFutureDatedPutOutsideWindowRejected.cs` |
